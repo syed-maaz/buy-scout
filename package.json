@@ -1,0 +1,45 @@
+{
+  "name": "buy-scout",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generic buy-side search, normalisation, shortlist and decision engine. Car-first POC.",
+  "scripts": {
+    "fetch:as24": "tsx src/cli/fetch.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "score": "tsx src/cli/score.ts",
+    "health": "tsx src/cli/health.ts",
+    "report": "tsx src/cli/report.ts",
+    "playbook": "tsx src/cli/playbook.ts",
+    "ui": "tsx src/ui/server.ts",
+    "analyze": "tsx src/cli/analyze.ts",
+    "eval": "tsx src/cli/eval.ts",
+    "email": "tsx src/cli/email.ts",
+    "import:url": "tsx src/cli/import-url.ts",
+    "import:leads": "tsx src/cli/import-leads.ts",
+    "daily": "npm run fetch:as24 && npm run analyze && npm run eval && npm run report && npm run health",
+    "docs:dev": "npm run docs:sync && npm --prefix website run start -- --host 127.0.0.1 --port 3100",
+    "docs:build": "npm run docs:sync && npm --prefix website run build",
+    "docs:serve": "npm --prefix website run serve -- --host 127.0.0.1 --port 3100",
+    "docs:sync": "rm -rf website/docs && cp -R docs website/docs",
+    "labels:export": "tsx src/cli/label.ts --limit 50",
+    "labels:score": "tsx src/cli/label.ts --score",
+    "fetch:report": "npm run fetch:as24 -- --no-laya && npm run report",
+  "intake": "tsx src/cli/intake.ts",
+  "reparse": "tsx src/cli/reparse.ts",
+  "availability": "tsx src/cli/availability.ts",
+    "laya:classify": "tsx src/cli/laya-classify.ts"
+  },
+  "dependencies": {
+    "@receptron/laya": "^0.2.0",
+    "cheerio": "^1.2.0",
+    "playwright-core": "^1.64.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

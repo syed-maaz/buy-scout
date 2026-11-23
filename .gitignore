@@ -1,0 +1,23 @@
+node_modules/
+dist/
+data/
+.env
+*.log
+.DS_Store
+
+# Docusaurus
+website/build/
+website/.docusaurus/
+website/node_modules/
+
+# Docusaurus synced docs copy (generated from ../docs)
+website/docs/
+
+# Local agent state and internal review working papers
+.claude/
+MEMORY.md
+reviews/
+
+# Local screenshots and exports
+*.png
+*.jpg

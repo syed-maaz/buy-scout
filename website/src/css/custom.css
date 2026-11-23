@@ -1,0 +1,36 @@
+:root {
+  --ifm-color-primary: #2f6fed;
+  --ifm-color-primary-dark: #2863d6;
+  --ifm-color-primary-darker: #255ecb;
+  --ifm-color-primary-light: #467ff0;
+  --ifm-color-primary-lighter: #5287f2;
+  --ifm-color-primary-lightest: #7aa5f6;
+  --ifm-code-font-size: 95%;
+}
+
+.hero--primary {
+  background: linear-gradient(135deg, #0c0f14 0%, #18233a 60%, #24406b 100%);
+}
+
+.hero__subtitle {
+  max-width: 780px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.feature-card {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  height: 100%;
+}
+
+.feature-card h3 {
+  margin-top: 0;
+}
+
+.docusaurus-mermaid-container {
+  background: var(--ifm-color-emphasis-100);
+  border-radius: 10px;
+  padding: 0.75rem;
+}

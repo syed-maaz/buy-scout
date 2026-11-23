@@ -1,0 +1,1514 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <title>buy-scout — family car shortlist</title>
+  <style>
+    :root {
+      --bg:#0b0f14; --panel:#141a22; --panel2:#10151c; --text:#e8eef6; --muted:#9aa9bd;
+      --line:#2a3748; --good:#15803d; --ask:#92400e; --watch:#475569; --bad:#b91c1c;
+      --accent:#60a5fa; --focus:#93c5fd; --price:#86efac;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15.5px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .skip-link { position:absolute; left:-9999px; top:8px; z-index:20; background:var(--text); color:var(--bg); padding:10px 14px; border-radius:8px; font-weight:700; }
+    .skip-link:focus { left:12px; }
+    :focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+    a { color:var(--accent); }
+    a:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+    header { position:relative; z-index:2; background:rgba(11,15,20,.95); border-bottom:1px solid var(--line); padding:18px 22px 12px; }
+    h1 { margin:0; font-size:21px; letter-spacing:-.02em; }
+    .sub { color:var(--muted); font-size:13px; margin-top:3px; }
+    .freshness { color:#8fa0b5; font-size:11.5px; margin-top:2px; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .group-title { display:flex; align-items:baseline; gap:9px; margin:22px 0 2px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+    .group-title b { color:var(--text); font-size:14px; letter-spacing:0; text-transform:none; }
+    .group-title span { font-weight:400; letter-spacing:0; text-transform:none; font-size:12px; }
+    .stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .stat { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:7px 11px; font-size:12px; color:var(--muted); }
+    .stat b { color:var(--text); font-size:15px; margin-right:5px; }
+    .toolbar { position:sticky; top:0; z-index:3; background:rgba(11,15,20,.97); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); padding:10px 22px; }
+    .toolbar-row { display:flex; align-items:flex-start; gap:10px; flex-wrap:nowrap; }
+    @media (min-width:761px){ .filters #sort { margin-left:auto; } }
+    .filter-toggle { display:none; align-items:center; gap:8px; font-weight:650; border-color:var(--accent); }
+    .filter-count { background:var(--accent); color:#07111f; border-radius:999px; min-width:20px; height:20px; display:inline-grid; place-items:center; font-size:11px; font-weight:800; padding:0 6px; }
+    .active-filters { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .chip { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:999px; padding:3px 8px; font-size:11.5px; }
+    .chip button { border:0; background:transparent; color:var(--text); padding:0 0 0 2px; min-height:0; font-size:15px; line-height:1; }
+    .chip-clear { border:1px solid var(--line); background:transparent; color:var(--accent); border-radius:999px; padding:3px 9px; font-size:11.5px; min-height:0; }
+    .toast { position:fixed; left:50%; bottom:22px; transform:translate(-50%,20px); z-index:30; display:flex; align-items:center; gap:12px; background:#e8eef6; color:#0b0f14; border-radius:10px; padding:11px 14px; box-shadow:0 12px 40px rgba(0,0,0,.45); opacity:0; pointer-events:none; transition:opacity .15s ease, transform .15s ease; font-size:13px; font-weight:600; }
+    .toast.show { opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+    .toast button { background:#0b0f14; color:#e8eef6; border:0; min-height:32px; padding:5px 10px; font-size:12px; }
+    .skeleton-card { height:150px; border:1px solid var(--line); background:linear-gradient(90deg,var(--panel) 25%,#1b2430 37%,var(--panel) 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; border-radius:12px; margin:11px 0; }
+    @keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:0 0} }
+    .filters { display:flex; flex:1 1 0; min-width:0; gap:8px; flex-wrap:wrap; align-items:center; }
+    .filters input[type="search"] { width:220px; }
+    .filters select { width:124px; }
+    .filters input[type="number"] { width:105px; }
+    .reject-toggle input { width:18px; height:18px; min-height:18px; accent-color:var(--accent); }
+    .reject-toggle { display:flex; align-items:center; gap:7px; min-height:40px; padding:0 4px; color:var(--muted); font-size:12.5px; white-space:nowrap; }
+    .reject-toggle input { width:auto; }
+    .conf { color:#9aa9bd; font-size:12px; }
+    .new { background:#1d4ed8; color:#fff; border-radius:999px; padding:2px 7px; font-size:10.5px; font-weight:750; letter-spacing:.04em; }
+    .seen { color:var(--muted); font-size:10.5px; white-space:nowrap; }
+    .fetch-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .fetch-bar button { border-color:#2e7d32; font-weight:650; cursor:pointer; }
+    .fetch-bar button:disabled { opacity:.55; cursor:wait; }
+    .fetch-status { color:var(--muted); font-size:12.5px; max-width:100%; line-height:1.45; overflow-wrap:anywhere; }
+    .disclaimer-bar { margin-top:10px; padding:8px 11px; border:1px solid #5a4a1f; background:#1c180d; color:#f6e05e; border-radius:8px; font-size:12px; }
+    .legend { margin-top:8px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); padding:10px 12px; }
+    .legend summary { cursor:pointer; color:var(--muted); font-size:13px; }
+    .legend-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:9px; margin-top:10px; }
+    .legend-item { border:1px solid var(--line); border-radius:8px; padding:8px 10px; color:#c7d2e0; font-size:12px; }
+    .legend-item b { display:inline-block; margin-right:6px; }
+    .legend-disclaimer { margin-top:10px; color:var(--muted); font-size:11.5px; line-height:1.5; }
+    .criteria { margin-top:10px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); padding:10px 12px; }
+    .criteria summary { cursor:pointer; color:var(--muted); font-size:13px; }
+    .criteria-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin-top:10px; }
+    .criteria-grid label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:11.5px; }
+    .criteria-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .criteria-msg { color:var(--muted); font-size:12px; }
+    .criteria button { cursor:pointer; border-color:var(--accent); }
+    .pref-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; color:var(--muted); font-size:12px; }
+    .pref-list { display:flex; flex-direction:column; gap:7px; margin-top:8px; }
+    .pref-row { display:grid; grid-template-columns:1.1fr 1fr 1.2fr 1fr 80px 34px; gap:6px; align-items:end; }
+    .pref-row label { display:flex; flex-direction:column; gap:3px; color:var(--muted); font-size:10.5px; }
+    .pref-row input, .pref-row select { width:100%; }
+    .pref-row .remove { padding:8px 9px; color:#feb2b2; }
+    .pref-note { color:var(--muted); font-size:11.5px; margin-top:6px; }
+    .pref { margin-top:6px; color:#f6e05e; font-size:12.5px; }
+    @media (max-width:760px){ .pref-row{grid-template-columns:1fr 1fr;} }
+    input, select, button { background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font:inherit; font-size:14px; min-height:40px; }
+    button { cursor:pointer; }
+    input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+    input[type="search"] { min-width:220px; }
+    main { max-width:1180px; margin:0 auto; padding:18px 22px 60px; }
+    .card { display:grid; grid-template-columns:168px minmax(0,1fr); gap:15px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; margin:11px 0; }
+    .card-media { width:168px; height:112px; border-radius:8px; overflow:hidden; background:var(--panel2); border:1px solid var(--line); }
+    .card-media img { width:100%; height:100%; object-fit:cover; display:block; }
+    .thumb-empty { width:100%; height:100%; display:grid; place-items:center; color:var(--muted); font-size:11px; text-align:center; padding:8px; }
+    .card-body { min-width:0; }
+    .card.act-inspect { border-left:4px solid var(--good); }
+    .card.act-skip { opacity:.55; border-left:4px solid var(--bad); }
+    .card.act-watch { border-left:4px solid var(--ask); }
+    .head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+    .badge { color:#fff; border-radius:999px; padding:3px 9px; font-size:11px; font-weight:750; letter-spacing:.045em; }
+    .score { color:var(--muted); font-weight:650; font-variant-numeric:tabular-nums; }
+    .title { margin:0; font-size:16px; line-height:1.35; font-weight:650; }
+    .title a { color:var(--text); text-decoration:none; }
+    .title a:hover { text-decoration:underline; text-underline-offset:2px; }
+    .price { color:var(--price); font-weight:750; font-variant-numeric:tabular-nums; }
+    .meta, .family { display:flex; gap:11px; flex-wrap:wrap; color:var(--muted); font-size:12.5px; margin-top:7px; }
+    .detail { margin-top:8px; color:#c7d2e0; font-size:13px; }
+    .flags { margin-top:6px; color:#feb2b2; font-size:12.5px; }
+    .actions { display:flex; gap:7px; margin-top:11px; flex-wrap:wrap; }
+    .actions button { min-height:40px; padding:9px 14px; }
+    .actions button:hover { border-color:var(--accent); }
+    .actions .inspect { border-color:#1f9d55; }
+    .actions .skip { border-color:#c53030; }
+    .user { margin-top:7px; font-size:12px; color:var(--muted); }
+    .analysis { margin-top:8px; padding:8px 10px; background:#10151c; border:1px solid var(--line); border-radius:8px; color:#c7d2e0; font-size:12.5px; }
+    .laya { margin-top:8px; padding:7px 10px; background:#0f1b2d; border:1px solid #1e3a5f; border-radius:8px; color:#bfdbfe; font-size:12.5px; }
+    .laya.risk { background:#2a160f; border-color:#7c2d12; color:#fed7aa; }
+    .laya b { color:#fff; }
+    .source-note { margin-top:7px; color:#fbbf24; font-size:12px; }
+    .empty { color:var(--muted); padding:40px 0; text-align:center; }
+    .detail-open { overflow:hidden; }
+    dialog#detailDialog { margin:0 0 0 auto; padding:0; width:min(760px,100%); height:100%; max-height:100%; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:0; }
+    dialog#detailDialog::backdrop { background:rgba(0,0,0,.62); backdrop-filter:blur(3px); }
+    .drawer { height:100%; overflow:auto; padding:20px 24px 40px; }
+    .drawer-head { position:sticky; top:-20px; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:12px; margin:-20px -24px 16px; padding:14px 20px; background:rgba(20,26,34,.98); border-bottom:1px solid var(--line); }
+    .drawer-head h2 { margin:0; font-size:17px; }
+    .drawer-close { min-height:36px; border-color:var(--line); }
+    .detail-hero { display:grid; grid-template-columns:200px minmax(0,1fr); gap:16px; align-items:start; }
+    .detail-hero img { width:200px; height:132px; object-fit:cover; border-radius:10px; border:1px solid var(--line); }
+    .detail-hero h3 { margin:0 0 4px; font-size:20px; line-height:1.25; }
+    .detail-price { color:var(--price); font-size:20px; font-weight:750; margin-top:6px; }
+    .detail-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .detail-actions button, .detail-actions a { min-height:36px; display:inline-flex; align-items:center; text-decoration:none; border:1px solid var(--line); border-radius:2px; padding:6px 11px; background:transparent; color:var(--accent); }
+    .detail-section { border-top:1px solid var(--line); padding-top:14px; margin-top:16px; }
+    .detail-section h3 { margin:0 0 9px; font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+    .metric { display:grid; grid-template-columns:92px 1fr 44px; gap:8px; align-items:center; margin:6px 0; font-size:12px; color:var(--muted); }
+    .metric b { color:var(--text); text-align:right; font-variant-numeric:tabular-nums; }
+    .bar { height:7px; background:var(--panel2); border-radius:99px; overflow:hidden; }
+    .bar i { display:block; height:100%; background:var(--accent); border-radius:99px; }
+    .detail-list { margin:0; padding-left:18px; color:#c7d2e0; font-size:13px; line-height:1.6; }
+    .detail-list li { margin:4px 0; }
+    .price-signal { display:flex; gap:11px; flex-wrap:wrap; align-items:baseline; margin:0; color:#c7d2e0; font-size:13px; }
+    .price-signal .meta { margin:0; font-size:12.5px; }
+    .price-drop { color:var(--price); font-weight:700; }
+    .price-up { color:#feb2b2; font-weight:700; }
+    .price-flat { color:var(--muted); font-weight:650; }
+    .research-box { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px; }
+    .basis { display:inline-flex; align-items:center; border:1px solid #3b5b82; background:#0f1b2d; color:#bfdbfe; border-radius:999px; padding:2px 8px; font-size:11px; margin-bottom:8px; }
+    .basis.warn { border-color:#7c5a1f; background:#211a0d; color:#fde68a; }
+    .problem { border:1px solid var(--line); border-radius:8px; padding:9px 11px; margin:8px 0; background:#10151c; }
+    .problem b { color:#fecaca; }
+    .problem .meta { color:var(--muted); font-size:11.5px; }
+    .problem p { margin:4px 0; color:#c7d2e0; font-size:12.5px; }
+    .source-list { margin:8px 0 0; padding-left:18px; font-size:12px; }
+    .source-list a { color:var(--accent); }
+    .message-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+    .message-text { width:100%; min-height:220px; resize:vertical; font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .outcome-notes { width:100%; min-height:76px; resize:vertical; background:var(--sheet); color:var(--ink); border:1px solid var(--line); border-radius:2px; padding:9px 11px; font:13px/1.5 var(--body); }
+    .message-note { color:var(--muted); font-size:11.5px; line-height:1.5; }
+    .save-btn.saved { border-color:var(--good); color:#bbf7d0; }
+    @media (max-width:700px){
+      .detail-hero { grid-template-columns:1fr; }
+      .detail-hero img { width:100%; height:180px; }
+      .drawer { padding:16px 16px 40px; }
+      .drawer-head { margin:-16px -16px 14px; padding:12px 16px; }
+    }
+    .source { color:#9aa9bd; font-size:11.5px; }
+    @media (max-width:760px){
+      header { position:static; padding:12px; }
+      .toolbar { position:sticky; top:0; z-index:5; padding:8px 12px; }
+      main { padding:12px; }
+      .stats { flex-wrap:wrap; overflow:visible; padding-bottom:0; }
+      .disclaimer-bar { font-size:11.5px; line-height:1.45; padding:7px 9px; }
+      .filter-toggle { display:inline-flex; }
+      header .fetch-bar { flex-wrap:wrap; }
+      header .fetch-status { flex:1 1 100%; }
+      .filters { display:none; width:100%; padding-bottom:2px; }
+      .toolbar.open .filters { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .filters > * { width:100%; flex:0 0 auto; }
+      .toolbar-row > #q { flex:1 1 auto; width:auto; min-width:0; }
+      .filters #sort { grid-column:1 / 2; }
+      .filters #reset { grid-column:2 / 3; }
+      .filters input[type="number"], .filters select { width:100%; }
+      .card { grid-template-columns:96px minmax(0,1fr); gap:10px; padding:12px; }
+      .card-media { width:96px; height:72px; }
+      input[type="search"] { min-width:210px; }
+      .actions button { min-height:44px; flex:1 1 30%; }
+      .reject-toggle { min-height:44px; }
+      .criteria-grid { grid-template-columns:1fr 1fr; }
+    }
+
+    /* Field dossier design pass */
+    :root {
+      --bg:#e7ebe2; --paper:#f7f8f1; --sheet:#fbfcf7; --panel:#f7f8f1; --panel2:#edf0e7;
+      --text:#202a24; --ink:#202a24; --muted:#667168; --line:#c6d0c3; --rule:#c6d0c3;
+      --good:#2f6b4f; --ask:#a36a16; --watch:#5c6b74; --bad:#a53a32;
+      --accent:#2d5f4b; --focus:#b55233; --price:#244f3d; --new:#2d5f4b; --signal:#b55233;
+      --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+      --body:"Gill Sans","Avenir Next","Segoe UI",sans-serif;
+    }
+    body {
+      background:var(--bg); color:var(--text);
+      font:16px/1.55 var(--body);
+      background-image:linear-gradient(rgba(32,42,36,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(32,42,36,.035) 1px,transparent 1px);
+      background-size:32px 32px;
+    }
+    header {
+      container-type:inline-size; container-name:header;
+      display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 28px;
+      padding:24px 28px 16px; background:var(--paper); border-bottom:2px solid var(--ink);
+      position:relative; z-index:2;
+    }
+    header h1 { grid-column:1; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:0; font-weight:400; letter-spacing:0; }
+    h1 .wordmark { font-family:var(--display); font-size:32px; line-height:1; letter-spacing:-.04em; color:var(--ink); }
+    h1 .desk-title { font-family:var(--body); font-size:15px; font-weight:600; letter-spacing:.01em; color:var(--muted); }
+    header .sub { grid-column:1; margin-top:7px; color:var(--ink); font-size:14px; letter-spacing:.01em; }
+    header .freshness { grid-column:1; margin-top:3px; color:var(--muted); font-size:12px; }
+    header .fetch-bar { grid-column:2; grid-row:1 / 4; align-self:start; justify-self:end; display:flex; flex-direction:column; align-items:flex-end; gap:6px; margin:0; max-width:300px; }
+    header .fetch-bar button { border:1px solid var(--ink); background:var(--ink); color:var(--paper); border-radius:2px; padding:9px 16px; font-weight:650; }
+    header .fetch-bar button:hover { background:var(--accent); border-color:var(--accent); }
+    header .fetch-status { color:var(--muted); font-size:11.5px; text-align:right; line-height:1.4; }
+    header .stats {
+      grid-column:1 / -1; display:grid; grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:0; margin:18px 0 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    }
+    header .stat { background:transparent; border:0; border-right:1px solid var(--line); border-radius:0; padding:10px 16px 11px 0; margin:0 16px 0 0; color:var(--muted); font-size:11.5px; line-height:1.25; }
+    header .stat:last-child { border-right:0; margin-right:0; }
+    header .stat b { display:block; margin:0 0 2px; color:var(--ink); font-family:var(--display); font-size:25px; font-weight:600; line-height:1; }
+    header .stat.lead b { font-size:34px; }
+    header .disclaimer-bar { grid-column:1 / -1; margin:12px 0 0; padding:8px 12px; border:0; border-left:3px solid var(--ask); background:#f1e9d4; color:#5f4a1e; border-radius:0; font-size:12px; }
+    header .legend, header .criteria { grid-column:1 / -1; margin-top:8px; border:1px solid var(--line); border-radius:2px; background:var(--sheet); padding:9px 12px; }
+    header .legend summary, header .criteria summary { color:var(--muted); font-size:12.5px; }
+    .legend-grid { gap:0; border-top:1px solid var(--line); margin-top:9px; }
+    .legend-item { border:0; border-right:1px solid var(--line); border-radius:0; padding:9px 14px 9px 0; margin-right:14px; font-size:12px; }
+    .legend-item:last-child { border-right:0; margin-right:0; }
+    .legend-disclaimer { border-top:1px solid var(--line); padding-top:8px; }
+    .criteria-grid { gap:9px 14px; }
+    .criteria-grid label { color:var(--muted); font-size:11px; }
+    .criteria button { border-color:var(--accent); }
+    .criteria-actions { border-top:1px solid var(--line); padding-top:9px; }
+    .pref-row .remove { color:var(--bad); }
+    .pref-head { color:var(--muted); }
+    .pref-note, .criteria-msg { color:var(--muted); }
+
+    .toolbar {
+      position:sticky; top:0; z-index:3; background:rgba(247,248,241,.96); backdrop-filter:blur(8px);
+      border-bottom:1px solid var(--line); padding:clamp(8px, 1.4vw, 10px) clamp(12px, 2.6vw, 28px);
+      container-type:inline-size; container-name:toolbar;
+    }
+    .toolbar-row { gap:8px; }
+    .filters { gap:7px; }
+    .filters input, .filters select, .filters button { min-height:36px; border-radius:2px; background:var(--sheet); border-color:var(--line); font-size:13px; }
+    .toolbar-row > #q { width:220px; min-width:0; flex:0 0 220px; }
+    .filters select { width:124px; }
+    .filters input[type="number"] { width:102px; }
+    .reject-toggle { min-height:36px; color:var(--muted); font-size:12px; }
+    .reject-toggle input { accent-color:var(--accent); }
+    .filter-toggle { display:none; border-radius:2px; border-color:var(--ink); color:var(--ink); background:var(--sheet); }
+    .filter-count { background:var(--ink); color:var(--paper); }
+    .active-filters { margin-top:7px; }
+    .chip, .chip-clear { border-radius:2px; background:var(--sheet); }
+    .chip { color:var(--muted); }
+    .chip-clear { color:var(--accent); }
+    .toast { background:var(--ink); color:var(--paper); border-radius:2px; box-shadow:0 14px 40px rgba(32,42,36,.22); }
+    .toast button { background:var(--paper); color:var(--ink); border-radius:2px; }
+
+    main { max-width:1220px; margin:0 auto; padding:clamp(14px, 2.4vw, 26px) clamp(12px, 2.6vw, 28px) 80px; container-type:inline-size; container-name:list; }
+    .group-title { display:flex; align-items:baseline; gap:10px; margin:34px 0 0; padding:0 0 7px; border-bottom:1px solid var(--ink); color:var(--muted); font-family:var(--body); font-size:12px; letter-spacing:.01em; text-transform:none; }
+    .group-title b { color:var(--ink); font-family:var(--display); font-size:24px; font-weight:600; letter-spacing:-.02em; }
+    .group-title .group-count { color:var(--ink); font-size:12px; font-weight:650; }
+    .group-title span { color:var(--muted); font-size:12px; }
+    .group-title:first-of-type { margin-top:0; }
+    .card {
+      display:grid; grid-template-columns:148px minmax(0,1fr); gap:20px;
+      background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0;
+      padding:20px 0 20px 14px; margin:0; position:relative;
+    }
+    .group-title + .card { border-top:1px solid var(--ink); }
+    .card.act-inspect { border-left:3px solid var(--good); }
+    .card.act-watch { border-left:3px solid var(--ask); }
+    .card.act-skip { border-left:3px solid var(--bad); opacity:.62; }
+    .card.gone { border-left:3px solid var(--bad); background:rgba(165,58,50,.04); }
+    .card.gone .title a { color:var(--muted); }
+    .gone-note { margin-top:9px; padding:7px 10px; border-left:2px solid var(--bad); background:#f5e7df; color:#6f3727; font-size:12px; }
+    .gone-note b { color:var(--bad); }
+    .card-media { width:148px; height:104px; border-radius:2px; border:1px solid var(--line); background:var(--panel2); }
+    .card-body { min-width:0; }
+    .head { gap:8px; min-width:0; }
+    .badge { border-radius:2px; padding:3px 7px; font-size:10.5px; letter-spacing:.06em; font-weight:700; }
+    .new { background:var(--new); border-radius:2px; padding:2px 6px; font-size:10px; letter-spacing:.05em; }
+    .score { color:var(--ink); font-family:var(--display); font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+    .conf { color:var(--muted); font-size:11px; }
+    .title { min-width:0; overflow-wrap:anywhere; font-family:var(--display); font-size:20px; line-height:1.2; font-weight:600; letter-spacing:-.015em; }
+    .title a { color:var(--ink); }
+    .source { color:var(--muted); font-size:11px; }
+    .meta { gap:0; margin-top:9px; color:var(--muted); font-size:12.5px; }
+    .meta > span { padding:0 9px; border-right:1px solid var(--line); }
+    .meta > span:first-child { padding-left:0; }
+    .meta > span:last-child { border-right:0; }
+    .price { color:var(--price); font-family:var(--display); font-size:21px; font-weight:600; padding-right:12px !important; }
+    .family { gap:0; margin-top:5px; color:var(--muted); font-size:12px; }
+    .family > span { padding:0 8px; border-right:1px solid var(--line); }
+    .family > span:first-child { padding-left:0; }
+    .family > span:last-child { border-right:0; }
+    .detail { margin-top:9px; color:#4d5b51; font-size:12.5px; line-height:1.5; max-width:75ch; }
+    .flags { color:var(--bad); font-size:12px; margin-top:6px; }
+    .pref { display:flex; align-items:center; gap:5px; flex-wrap:wrap; color:#7b5b14; font-size:11.5px; margin-top:5px; }
+    .pref-label { color:var(--muted); font-size:10.5px; letter-spacing:.03em; }
+    .pref-chip { border:1px solid #d8c59b; background:#f1e9d4; color:#6b531e; padding:1px 6px; border-radius:2px; }
+    .pref-chip b { font-weight:650; }
+    .analysis { margin-top:8px; padding:8px 11px; background:transparent; border:0; border-left:2px solid var(--accent); border-radius:0; color:#4d5b51; font-size:12px; }
+    .laya { margin-top:8px; padding:7px 10px; background:#edf2ec; border:0; border-left:2px solid var(--accent); border-radius:0; color:#355d47; font-size:12px; }
+    .laya.risk { background:#f5e7df; border-left-color:var(--signal); color:#6f3727; }
+    .laya b { color:var(--ink); }
+    .source-note { color:#7b5b14; font-size:11.5px; }
+    .actions { gap:5px; margin-top:12px; align-items:center; }
+    .actions button { min-height:32px; padding:5px 11px; border-radius:2px; background:transparent; border:1px solid var(--line); color:var(--ink); font-size:12px; }
+    .actions button:hover { border-color:var(--ink); background:var(--sheet); }
+    .actions .inspect { background:var(--good); border-color:var(--good); color:#fff; }
+    .actions .inspect:hover { background:#275b43; }
+    .actions .skip { border-color:#d3b4ae; color:var(--bad); }
+    .actions .skip:hover { background:#f5e7df; }
+    .actions .saved { border-color:var(--good); color:var(--good); }
+    .user { color:var(--muted); font-size:11.5px; }
+    .empty { color:var(--muted); padding:52px 0; border-top:1px solid var(--ink); }
+
+    .unavailable-box { display:flex; flex-direction:column; gap:3px; margin-bottom:14px; padding:10px 12px; border-left:3px solid var(--bad); background:#f5e7df; color:#6f3727; font-size:13px; }
+    .unavailable-box b { color:var(--bad); font-family:var(--display); font-size:17px; }
+    dialog#detailDialog { background:var(--paper); color:var(--ink); border-left:1px solid var(--ink); }
+    dialog#detailDialog::backdrop { background:rgba(32,42,36,.45); backdrop-filter:blur(2px); }
+    .drawer-head { background:rgba(247,248,241,.98); border-bottom:1px solid var(--ink); }
+    .drawer-head h2 { font-family:var(--display); font-size:24px; font-weight:600; }
+    .drawer-close { border-radius:2px; background:transparent; color:var(--ink); }
+    .detail-hero h3 { font-family:var(--display); font-size:27px; font-weight:600; letter-spacing:-.025em; }
+    .detail-price { color:var(--price); font-family:var(--display); font-size:25px; font-weight:600; }
+    .detail-actions button, .detail-actions a { border-radius:2px; }
+    .detail-section { border-top:1px solid var(--line); }
+    .detail-section h3 { color:var(--muted); font-family:var(--body); font-size:12px; text-transform:none; letter-spacing:.01em; font-weight:650; }
+    .metric { color:var(--muted); }
+    .bar { background:var(--panel2); border-radius:0; }
+    .bar i { background:var(--accent); border-radius:0; }
+    .detail-list { color:#4d5b51; }
+    .price-signal { color:#4d5b51; }
+    .price-drop { color:var(--good); }
+    .price-up { color:var(--bad); }
+    .price-flat { color:var(--muted); }
+    .research-box { background:var(--sheet); border-color:var(--line); border-radius:2px; }
+    .basis { border-radius:2px; background:#edf2ec; border-color:var(--line); color:var(--accent); }
+    .basis.warn { background:#f1e9d4; border-color:#d8c59b; color:#6b531e; }
+    .problem { background:var(--sheet); border-color:var(--line); border-radius:2px; }
+    .problem b { color:var(--bad); }
+    .problem p { color:#4d5b51; }
+    .source-list a { color:var(--accent); }
+    .message-text { background:var(--sheet); color:var(--ink); border-radius:2px; }
+    .message-note { color:var(--muted); }
+    .save-btn.saved { border-color:var(--good); color:var(--good); }
+    .price-signal .meta { color:var(--muted); }
+    .metric b { color:var(--ink); }
+    .source-list { color:#4d5b51; }
+    .drawer { padding:20px 26px 50px; }
+    .detail-hero img { border-radius:2px; border-color:var(--line); }
+
+    @container toolbar (max-width:1240px) {
+      .filter-toggle { display:inline-flex; }
+      .filters { display:none; width:100%; padding-bottom:2px; }
+      .toolbar.open .filters {
+        display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;
+        position:absolute; left:0; right:0; top:100%; z-index:6;
+        padding:12px 28px 14px; max-height:72vh; overflow:auto;
+        background:var(--paper); border-bottom:1px solid var(--ink);
+        box-shadow:0 18px 28px rgba(32,42,36,.14);
+      }
+      .filters > * { width:100%; flex:0 0 auto; }
+      .toolbar-row > #q { flex:1 1 auto; width:auto; min-width:0; }
+      .filters #sort { grid-column:1 / 2; }
+      .filters #reset { grid-column:2 / 3; }
+      .filters input[type="number"], .filters select { width:100%; }
+    }
+    @container toolbar (max-width:620px) {
+      .toolbar.open .filters { grid-template-columns:1fr 1fr; padding:12px; }
+      .toolbar.open .filters > * { width:100%; }
+    }
+    @media (max-width:900px) {
+      header { padding:18px 18px 12px; }
+      h1 .wordmark { font-size:28px; }
+      header .fetch-bar { max-width:240px; }
+      .toolbar { padding:8px 18px; }
+      main { padding:20px 18px 64px; }
+      .card { grid-template-columns:124px minmax(0,1fr); gap:14px; }
+      .card-media { width:124px; height:90px; }
+      header .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      header .stat:nth-child(3) { border-right:0; margin-right:0; }
+      header .stat:nth-child(n+4) { border-top:1px solid var(--line); padding-top:9px; }
+    }
+    @media (max-width:760px) {
+      header { display:block; padding:14px 12px 10px; }
+      header .fetch-bar { display:flex; flex-direction:row; align-items:center; justify-content:space-between; max-width:none; margin-top:10px; }
+      header .fetch-status { text-align:left; }
+      header .stats { grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:12px; }
+      header .stat { padding:8px 8px 9px 0; margin-right:8px; }
+      header .stat b { font-size:22px; }
+      .toolbar { position:sticky; top:0; z-index:5; padding:8px 12px; }
+      .filter-toggle { display:inline-flex; }
+      .filters { display:none; width:100%; padding-bottom:2px; }
+      .toolbar.open .filters { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:12px; max-height:72vh; }
+      .filters > * { width:100%; flex:0 0 auto; }
+      .toolbar-row > #q { flex:1 1 auto; width:auto; min-width:0; }
+      .filters #sort { grid-column:1 / 2; }
+      .filters #reset { grid-column:2 / 3; }
+      .filters input[type="number"], .filters select { width:100%; }
+      main { padding:14px 12px 60px; }
+      .card { grid-template-columns:96px minmax(0,1fr); gap:11px; padding:14px 0 14px 10px; }
+      .card-media { width:96px; height:74px; }
+      .title { font-size:17px; }
+      .price { font-size:18px; }
+      .meta { font-size:11.5px; }
+      .meta > span { padding:0 6px; }
+      .family { font-size:11px; }
+      .actions button { min-height:40px; flex:1 1 28%; }
+      .criteria-grid { grid-template-columns:1fr 1fr; }
+      .group-title { display:grid; grid-template-columns:1fr auto; gap:2px 8px; }
+      .group-title b { grid-column:1 / -1; }
+      .group-title .group-count { grid-column:1; grid-row:2; }
+      .group-title span:last-child { grid-column:2; grid-row:2; text-align:right; font-size:11px; }
+      .detail-hero { grid-template-columns:1fr; }
+      .detail-hero img { width:100%; height:190px; }
+      .drawer { padding:14px 14px 40px; }
+      .drawer-head { margin:-14px -14px 14px; padding:12px 14px; }
+    }
+
+    /* Pane-driven layout: works in a phone, a split pane, or an embedded web instance. */
+    @container header (max-width:900px) {
+      header .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      header .stat:nth-child(3) { border-right:0; margin-right:0; }
+      header .stat:nth-child(n+4) { border-top:1px solid var(--line); padding-top:9px; }
+    }
+    @container list (max-width:620px) {
+      .card, .card.act-inspect, .card.act-watch, .card.act-skip, .card.gone {
+        grid-template-columns:1fr; gap:0; padding:14px 0 18px; border-left:0;
+      }
+      .card-media { width:100%; height:clamp(150px, 42cqw, 220px); margin-bottom:11px; }
+      .card-media.no-photo { display:none; }
+      .card-body { width:100%; }
+      .head { gap:7px; }
+      .title { font-size:clamp(19px, 5.2cqw, 23px); line-height:1.15; }
+      .source { margin-left:auto; }
+      .meta { display:flex; flex-wrap:wrap; gap:0; margin-top:10px; }
+      .meta > span { border:0; background:var(--panel2); padding:3px 7px; margin:0 5px 5px 0; }
+      .meta > span:first-child { padding-left:7px; }
+      .price { display:block; width:100%; padding:0 0 3px !important; font-size:clamp(23px, 6cqw, 27px); }
+      .family { display:flex; flex-wrap:wrap; gap:0; }
+      .family > span { border:0; background:var(--panel2); padding:3px 6px; margin:0 4px 4px 0; }
+      .detail { font-size:13px; line-height:1.5; }
+      .actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; align-items:stretch; }
+      .actions button { width:100%; min-height:44px; }
+      .actions .user { grid-column:1 / -1; }
+      .actions .user button { width:auto; min-height:32px; }
+      .group-title { margin-top:24px; }
+    }
+    @media (max-width:600px) {
+      dialog#detailDialog { inset:0; margin:0; width:100%; height:100%; max-width:none; max-height:none; border:0; }
+      .drawer { height:100vh; overflow:auto; }
+    }
+    @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} *{transition:none!important;animation:none!important} }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#list">Skip to listings</a>
+<header>
+  <h1><span class="wordmark">buy-scout</span><span class="desk-title">Family car shortlist</span></h1>
+  <div class="sub" id="subtitle">Family car search near 69168</div>
+  <div class="freshness" id="freshness">Loading data state…</div>
+  <div class="stats" id="stats" aria-live="polite"></div>
+  <div class="fetch-bar">
+    <button id="fetchNow" type="button">Fetch now</button>
+    <button id="importUrl" type="button">Import link</button>
+    <span class="fetch-status" id="fetchStatus" aria-live="polite">Uses the saved criteria. Save changes first if you edited them.</span>
+  </div>
+  <div class="disclaimer-bar">Screening labels only. Verify VIN, HU/AU, history and test-drive before buying.</div>
+  <details class="legend">
+    <summary>What do INSPECT / ASK / WATCH / REJECT mean?</summary>
+    <div class="legend-grid">
+      <div class="legend-item"><span class="badge" style="background:var(--good)">INSPECT</span><b>Worth a viewing.</b> Passes all hard gates, family fields are known, and the relative fit score is ≥ 65. This is a shortlist label, not an approval or guarantee.</div>
+      <div class="legend-item"><span class="badge" style="background:var(--ask)">ASK</span><b>Ask the seller first.</b> Passes hard gates, but at least one required field is unknown: seats, doors, ISOFIX or body type, or a fuel, gearbox, damage or seller-type constraint. Not a rejection; get the missing facts before booking.</div>
+      <div class="legend-item"><span class="badge" style="background:var(--watch)">WATCH</span><b>Keep watching.</b> Passes hard gates and family fields are known, but the relative fit score is below 65. Wait for a price drop or a better car.</div>
+      <div class="legend-item"><span class="badge" style="background:var(--bad)">REJECT</span><b>Failed a hard rule.</b> Price, distance, seats, doors, ISOFIX, year, mileage, damage, commercial-only seller or a red flag. Score is 0; revisit only if the data or criteria change.</div>
+    </div>
+    <div class="legend-disclaimer">
+      <b>Score</b> is a 0–100 relative fit ranking, not a probability and not a quality rating.
+      <b>Confidence</b> is data completeness (0–1), not the model's certainty.
+      A badge never verifies the seller's claims. Always check VIN, HU/AU report, service history, accident history, mileage plausibility, ownership, cold start, test drive and an independent inspection.
+    </div>
+  </details>
+  <details class="criteria">
+    <summary>Criteria v<span id="criteriaVersion">...</span> — changes re-score every stored listing; they do not fetch new listings</summary>
+    <div class="criteria-grid">
+      <label>Purchase max €<input id="cPurchase" type="number" min="500" step="100" /></label>
+      <label>Reserve for fees/repairs €<input id="cReserve" type="number" min="0" step="100" /></label>
+      <label>ZIP<input id="cZip" type="text" inputmode="numeric" /></label>
+      <label>Radius km<input id="cRadius" type="number" min="5" step="5" /></label>
+      <label>Min seats<input id="cSeats" type="number" min="2" step="1" /></label>
+      <label>Min side doors<input id="cDoors" type="number" min="2" step="1" /></label>
+      <label>Min year<input id="cYear" type="number" min="1990" max="2030" step="1" /></label>
+      <label>Max km<input id="cKm" type="number" min="10000" step="5000" /></label>
+      <label>Fuel<select id="cFuel"><option value="any">Any</option><option value="petrol">Petrol</option><option value="diesel">Diesel</option></select></label>
+      <label>Gearbox<select id="cTransmission"><option value="any">Any</option><option value="manual">Manual</option><option value="automatic">Automatic</option></select></label>
+      <label>Analysis min score<input id="cMinScore" type="number" min="0" max="100" step="1" /></label>
+      <label>Analysis min confidence<input id="cMinConfidence" type="number" min="0" max="1" step="0.05" /></label>
+      <label>Analysis max cards<input id="cMaxCards" type="number" min="1" max="100" step="1" /></label>
+      <label style="flex-direction:row;align-items:center;gap:7px;margin-top:14px"><input id="cAutoRun" type="checkbox" style="width:auto" /> Analyze qualifying after save</label>
+    </div>
+    <div class="pref-head">
+      <b>Priority weights</b>
+      <span>Boost matching cars; never hide the others.</span>
+      <button id="addPref" type="button">Add priority</button>
+    </div>
+    <div class="pref-list" id="prefs"></div>
+    <div class="pref-note">Example: field <b>equipment</b>, contains <b>Bose</b>, weight <b>10</b>. A match adds points; a non-match stays visible.</div>
+    <div class="criteria-actions">
+      <button id="saveCriteria">Save criteria</button>
+      <button id="learnPreferences" type="button">Learn from saved</button>
+      <button id="analyzeTop">Analyze qualifying cards</button>
+      <span class="criteria-msg" id="cAllIn">All-in budget: —</span>
+      <span class="criteria-msg" id="criteriaMsg" aria-live="polite">Saving re-evaluates stored listings and clears old analyses. Fetching is separate.</span>
+    </div>
+  </details>
+
+</header>
+<div class="toolbar" id="toolbar" role="search" aria-label="Listing filters">
+  <div class="toolbar-row">
+    <button id="toggleFilters" class="filter-toggle" type="button" aria-expanded="false" aria-controls="filters">Filters <span class="filter-count" id="filterCount">0</span></button>
+    <input id="q" type="search" placeholder="Search make, model, city" aria-label="Search listings" />
+    <div class="filters" id="filters">
+    <select id="verdict" aria-label="Filter by verdict">
+      <option value="">All verdicts</option>
+      <option value="inspect">Inspect</option>
+      <option value="ask">Ask</option>
+      <option value="watch">Watch</option>
+      <option value="reject">Reject</option>
+    </select>
+    <select id="source" aria-label="Filter by source"><option value="">All sources</option></select>
+    <select id="make" aria-label="Filter by make"><option value="">All makes</option></select>
+    <select id="model" aria-label="Filter by model"><option value="">All models</option></select>
+    <select id="body" aria-label="Filter by body type"><option value="">All body types</option></select>
+    <select id="gearbox" aria-label="Filter by gearbox">
+      <option value="">Any gearbox</option>
+      <option value="automatic">Automatic</option>
+      <option value="manual">Manual</option>
+    </select>
+    <input id="maxPrice" type="number" placeholder="Max €" min="0" step="100" aria-label="Maximum price" />
+    <input id="maxKm" type="number" placeholder="Max km" min="0" step="5000" aria-label="Maximum mileage" />
+    <input id="minYear" type="number" placeholder="Min year" min="1990" max="2030" aria-label="Minimum registration year" />
+    <label class="reject-toggle"><input id="includeRejected" type="checkbox" /> Show rejected</label>
+    <label class="reject-toggle"><input id="newOnly" type="checkbox" /> New only</label>
+    <label class="reject-toggle"><input id="riskOnly" type="checkbox" /> Mechanical risk</label>
+    <label class="reject-toggle"><input id="savedOnly" type="checkbox" /> Saved only</label>
+    <label class="reject-toggle"><input id="includeSkipped" type="checkbox" /> Show skipped</label>
+    <label class="reject-toggle"><input id="includeUnavailable" type="checkbox" /> Show unavailable</label>
+    <select id="sort" aria-label="Sort listings">
+      <option value="best">Best match</option>
+      <option value="newest">Newest first</option>
+      <option value="price_asc">Price: low to high</option>
+      <option value="price_desc">Price: high to low</option>
+      <option value="mileage">Lowest mileage</option>
+      <option value="year">Newest registration</option>
+    </select>
+    <button id="reset" type="button">Reset</button>
+  </div>
+  </div>
+  <div class="active-filters" id="activeFilters"></div>
+</div>
+<main id="list" tabindex="-1" aria-busy="true">
+  <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="detailDialog" aria-labelledby="detailTitle">
+  <div class="drawer">
+    <div class="drawer-head"><h2 id="detailTitle">Car detail</h2><button class="drawer-close" id="closeDetail" type="button">Close</button></div>
+    <div id="detailBody">Loading…</div>
+  </div>
+</dialog>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur = (v) => v == null ? '—' : Number(v).toLocaleString('de-DE') + ' €';
+const km = (v) => v == null ? '—' : Number(v).toLocaleString('de-DE') + ' km';
+const badgeColor = { inspect:'var(--good)', ask:'var(--ask)', watch:'var(--watch)', reject:'var(--bad)' };
+
+function params() {
+  const p = new URLSearchParams();
+  for (const id of ['q','verdict','source','make','model','body','gearbox','maxPrice','maxKm','minYear']) {
+    const v = $(id).value.trim();
+    if (v) p.set(id, v);
+  }
+  if ($('includeRejected').checked) p.set('includeRejected', '1');
+  if ($('newOnly').checked) p.set('newOnly', '1');
+  if ($('riskOnly').checked) p.set('riskOnly', '1');
+  if ($('savedOnly').checked) p.set('savedOnly', '1');
+  if ($('includeSkipped').checked) p.set('includeSkipped', '1');
+  if ($('includeUnavailable').checked) p.set('includeUnavailable', '1');
+  const sort = $('sort').value;
+  if (sort && sort !== 'best') p.set('sort', sort);
+  return p.toString();
+}
+
+let activeBrief = null;
+let criteriaDirty = false;
+let pendingMake = new URLSearchParams(location.search).get('make') || '';
+let pendingModel = new URLSearchParams(location.search).get('model') || '';
+let initialCarReload = false;
+function markCriteriaDirty() {
+  criteriaDirty = true;
+  $('criteriaMsg').textContent = 'Unsaved criteria changes. Save criteria first; Fetch now uses the saved profile.';
+}
+
+async function loadCriteria() {
+  const res = await fetch('/api/criteria');
+  const data = await res.json();
+  activeBrief = data.brief;
+  $('criteriaVersion').textContent = String(data.version);
+  $('subtitle').textContent = `${data.brief.location.zip} · car up to ${data.brief.purchaseMaxEur.toLocaleString('de-DE')} € · ${(data.brief.purchaseMaxEur + data.brief.reserveEur).toLocaleString('de-DE')} € all-in · ${data.brief.location.radiusKm} km`;
+  $('cPurchase').value = data.brief.purchaseMaxEur;
+  $('cReserve').value = data.brief.reserveEur;
+  renderPreferences(data.brief.preferences ?? []);
+  updateAllIn();
+  $('cZip').value = data.brief.location.zip;
+  $('cRadius').value = data.brief.location.radiusKm;
+  $('cSeats').value = data.brief.hard.minSeats;
+  $('cDoors').value = data.brief.hard.minDoors;
+  $('cYear').value = data.brief.hard.minFirstRegistrationYear;
+  $('cKm').value = data.brief.hard.maxMileageKm;
+  $('cFuel').value = data.brief.hard.fuel;
+  $('cTransmission').value = data.brief.hard.transmission;
+  const analysis = data.brief.analysis ?? { minScore: 60, minConfidence: 0.6, maxCards: 30, autoRun: false };
+  $('cMinScore').value = analysis.minScore;
+  $('cMinConfidence').value = analysis.minConfidence;
+  $('cMaxCards').value = analysis.maxCards;
+  $('cAutoRun').checked = !!analysis.autoRun;
+  criteriaDirty = false;
+}
+
+function addPrefRow(rule = {}) {
+  const row = document.createElement('div');
+  row.className = 'pref-row';
+  row.innerHTML = `
+    <label>Label<input class="pLabel" value="${esc(rule.label ?? '')}" placeholder="Bose sound" /></label>
+    <label>Field<select class="pField">
+      ${['equipment','make','model','variant','title','bodyType','fuel','transmission','sellerType'].map(f => `<option value="${f}" ${rule.field===f?'selected':''}>${f}</option>`).join('')}
+    </select></label>
+    <label>Value<input class="pValue" value="${esc(rule.value ?? '')}" placeholder="Bose" /></label>
+    <label>Match<select class="pMatch"><option value="contains" ${rule.match!=='equals'?'selected':''}>contains</option><option value="equals" ${rule.match==='equals'?'selected':''}>equals</option></select></label>
+    <label>Weight<input class="pWeight" type="number" min="0" max="25" step="1" value="${Number(rule.weight ?? 10)}" /></label>
+    <button class="remove" type="button" title="Remove">×</button>`;
+  row.querySelector('.remove').addEventListener('click', () => { row.remove(); updateAllIn(); });
+  $('prefs').appendChild(row);
+}
+
+function renderPreferences(rules) {
+  $('prefs').innerHTML = '';
+  for (const rule of rules) addPrefRow(rule);
+}
+
+function collectPreferences() {
+  return [...document.querySelectorAll('.pref-row')].map((row, index) => {
+    const value = row.querySelector('.pValue').value.trim();
+    const label = row.querySelector('.pLabel').value.trim() || `${row.querySelector('.pField').value}: ${value}`;
+    return {
+      id: `pref-${Date.now()}-${index}`,
+      label,
+      field: row.querySelector('.pField').value,
+      match: row.querySelector('.pMatch').value,
+      value,
+      weight: Number(row.querySelector('.pWeight').value),
+      enabled: true,
+    };
+  }).filter((rule) => rule.value && rule.weight > 0);
+}
+
+function updateAllIn() {
+  const allIn = Number($('cPurchase').value || 0) + Number($('cReserve').value || 0);
+  $('cAllIn').textContent = `All-in budget: ${allIn.toLocaleString('de-DE')} € (car + reserve)`;
+}
+
+async function saveCriteria() {
+  if (!activeBrief) return;
+  if (!confirm('Save criteria? This creates a new version and clears all stored analyses. You will need to analyze again.')) return;
+  const brief = JSON.parse(JSON.stringify(activeBrief));
+  brief.purchaseMaxEur = Number($('cPurchase').value);
+  brief.reserveEur = Number($('cReserve').value);
+  brief.budgetAllInEur = brief.purchaseMaxEur + brief.reserveEur;
+  brief.location.zip = $('cZip').value.trim();
+  brief.location.radiusKm = Number($('cRadius').value);
+  brief.hard.minSeats = Number($('cSeats').value);
+  brief.hard.minDoors = Number($('cDoors').value);
+  brief.hard.minFirstRegistrationYear = Number($('cYear').value);
+  brief.hard.maxMileageKm = Number($('cKm').value);
+  brief.hard.fuel = $('cFuel').value;
+  brief.hard.transmission = $('cTransmission').value;
+  brief.preferences = collectPreferences();
+  brief.analysis = {
+    minScore: Number($('cMinScore').value),
+    minConfidence: Number($('cMinConfidence').value),
+    maxCards: Number($('cMaxCards').value),
+    autoRun: $('cAutoRun').checked,
+  };
+
+  const res = await fetch('/api/criteria', {
+    method: 'POST',
+    headers: {'content-type':'application/json'},
+    body: JSON.stringify({ brief, name: 'Family profile' }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    $('criteriaMsg').textContent = 'Error: ' + (data.error || 'could not save');
+    return;
+  }
+  $('criteriaMsg').textContent = `Saved criteria v${data.version}; old analyses cleared.`;
+  criteriaDirty = false;
+  await loadCriteria();
+  if (brief.analysis.autoRun) {
+    await analyzeQualifying();
+  } else {
+    await load();
+  }
+}
+
+async function analyzeQualifying() {
+  const minScore = Number($('cMinScore').value);
+  const minConfidence = Number($('cMinConfidence').value);
+  const maxCards = Number($('cMaxCards').value);
+  if (!confirm('Analyze qualifying cards? This may take several seconds and may call DeepSeek for each card.')) return;
+  $('analyzeTop').disabled = true;
+  $('criteriaMsg').textContent = 'Analyzing qualifying cards…';
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({ minScore, minConfidence, maxCards }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      $('criteriaMsg').textContent = 'Error: ' + (data.error || 'analysis failed');
+      return;
+    }
+    let job = data.job;
+    while (job && job.status === 'running') {
+      $('criteriaMsg').textContent = `Analyzing… ${job.analyzed} of ${job.considered || '?'} cards done.`;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const status = await fetch('/api/analyze/status');
+      const payload = await status.json();
+      job = payload.job;
+    }
+    $('criteriaMsg').textContent = job?.status === 'done'
+      ? `Analyzed ${job.analyzed} of ${job.considered} qualifying cards (score ≥ ${job.minScore}, confidence ≥ ${job.minConfidence}, cap ${job.maxCards}).`
+      : 'Error: ' + (job?.error || 'analysis failed');
+    await load();
+  } finally {
+    $('analyzeTop').disabled = false;
+  }
+}
+
+async function load() {
+  const list = $('list');
+  const needsInitialCarReload = !initialCarReload && (pendingMake !== '' || pendingModel !== '');
+  list.setAttribute('aria-busy', 'true');
+  renderFilterSummary();
+  const res = await fetch('/api/listings?' + params());
+  const data = await res.json();
+  renderStats(
+    data.summary,
+    data.criteriaVersion,
+    data.items.filter((item) => (item.evaluation.preferenceBoost ?? 0) > 0).length,
+  );
+  renderSourceOptions(data.items);
+  renderCarOptions(data.facets, data.items);
+  renderBodyOptions(data.facets, data.items);
+  if (!data.items.length) {
+    let rejectedHint = '';
+    if (!$('includeRejected').checked) {
+      const alt = new URLSearchParams(params());
+      alt.set('includeRejected', '1');
+      try {
+        const extra = await fetch('/api/listings?' + alt.toString());
+        const altData = await extra.json();
+        if (altData.items?.length) {
+          rejectedHint = `<br>${altData.items.length} rejected listing${altData.items.length === 1 ? '' : 's'} match this car filter. <button type="button" onclick="document.querySelector('#includeRejected').checked=true;load()">Show rejected</button>`;
+        }
+      } catch {}
+    }
+    list.innerHTML = `<div class="empty">No listings match these filters.${rejectedHint}<br><button type="button" onclick="clearFilters()">Clear filters</button></div>`;
+  } else {
+    list.innerHTML = renderItems(data.items);
+  }
+  list.setAttribute('aria-busy', 'false');
+  writeUrl();
+  if (needsInitialCarReload) {
+    initialCarReload = true;
+    await load();
+  }
+}
+
+function renderItems(items) {
+  const sort = $('sort').value;
+  const verdict = $('verdict').value;
+  let html = '<h2 class="sr-only">Listings</h2>';
+  if (sort === 'best' && !verdict) {
+    const groups = [
+      ['inspect', 'hard gates and family fields known'],
+      ['ask', 'missing family facts'],
+      ['watch', 'passes gates, score below 65'],
+      ['reject', 'failed a hard gate'],
+    ];
+    for (const [key, hint] of groups) {
+      const group = items.filter((item) => item.evaluation.verdict === key);
+      if (!group.length) continue;
+      const groupName = { inspect: 'Worth viewing', ask: 'Ask the seller', watch: 'Keep watching', reject: 'Rejected' }[key];
+      html += `<h2 class="group-title"><b>${groupName}</b><span class="group-count">${group.length}</span><span>${hint}</span></h2>`;
+      html += group.map(card).join('');
+    }
+  } else {
+    html += items.map(card).join('');
+  }
+  return html;
+}
+
+function ago(iso) {
+  if (!iso) return 'unknown';
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
+
+function writeUrl() {
+  const qs = params();
+  history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+}
+
+function restoreUrl() {
+  const current = new URLSearchParams(location.search);
+  for (const id of ['q','verdict','source','make','model','body','gearbox','maxPrice','maxKm','minYear','sort']) {
+    if (current.has(id)) $(id).value = current.get(id);
+  }
+  $('includeRejected').checked = current.get('includeRejected') === '1';
+  $('newOnly').checked = current.get('newOnly') === '1';
+  $('riskOnly').checked = current.get('riskOnly') === '1';
+  $('savedOnly').checked = current.get('savedOnly') === '1';
+  $('includeSkipped').checked = current.get('includeSkipped') === '1';
+  $('includeUnavailable').checked = current.get('includeUnavailable') === '1';
+}
+
+function filterItems() {
+  const items = [];
+  if ($('q').value.trim()) items.push({ key:'q', label:`Search: ${$('q').value.trim()}` });
+  if ($('verdict').value) items.push({ key:'verdict', label:`Verdict: ${$('verdict').value}` });
+  if ($('source').value) items.push({ key:'source', label:`Source: ${$('source').value}` });
+  if ($('make').value) items.push({ key:'make', label:`Make: ${$('make').value}` });
+  if ($('model').value) items.push({ key:'model', label:`Model: ${$('model').value}` });
+  if ($('body').value) items.push({ key:'body', label:`Body: ${$('body').value}` });
+  if ($('gearbox').value) items.push({ key:'gearbox', label:`Gearbox: ${$('gearbox').value}` });
+  if ($('maxPrice').value) items.push({ key:'maxPrice', label:`Max ${Number($('maxPrice').value).toLocaleString('de-DE')} €` });
+  if ($('maxKm').value) items.push({ key:'maxKm', label:`Max ${Number($('maxKm').value).toLocaleString('de-DE')} km` });
+  if ($('minYear').value) items.push({ key:'minYear', label:`From ${$('minYear').value}` });
+  if ($('newOnly').checked) items.push({ key:'newOnly', label:'New only' });
+  if ($('riskOnly').checked) items.push({ key:'riskOnly', label:'Mechanical risk' });
+  if ($('savedOnly').checked) items.push({ key:'savedOnly', label:'Saved only' });
+  if ($('includeRejected').checked) items.push({ key:'includeRejected', label:'Rejected included' });
+  if ($('includeSkipped').checked) items.push({ key:'includeSkipped', label:'Skipped included' });
+  if ($('includeUnavailable').checked) items.push({ key:'includeUnavailable', label:'Unavailable included' });
+  return items;
+}
+
+function renderFilterSummary() {
+  const items = filterItems();
+  const count = $('filterCount');
+  if (count) count.textContent = String(items.length);
+  const box = $('activeFilters');
+  if (!box) return;
+  if (!items.length) { box.innerHTML = ''; return; }
+  box.innerHTML = items.map((item) => `<span class="chip">${esc(item.label)}<button type="button" data-filter="${esc(item.key)}" aria-label="Remove ${esc(item.label)} filter">×</button></span>`).join('')
+    + '<button type="button" class="chip-clear" id="clearFilters">Clear all</button>';
+  for (const button of box.querySelectorAll('[data-filter]')) {
+    button.addEventListener('click', () => clearFilter(button.dataset.filter));
+  }
+  $('clearFilters')?.addEventListener('click', clearFilters);
+}
+
+function clearFilter(key) {
+  if (key === 'newOnly') $('newOnly').checked = false;
+  else if (key === 'riskOnly') $('riskOnly').checked = false;
+  else if (key === 'savedOnly') $('savedOnly').checked = false;
+  else if (key === 'includeRejected') $('includeRejected').checked = false;
+  else if (key === 'includeSkipped') $('includeSkipped').checked = false;
+  else if (key === 'includeUnavailable') $('includeUnavailable').checked = false;
+  else $(key).value = '';
+  load();
+}
+
+function clearFilters() {
+  for (const id of ['q','verdict','source','make','model','body','gearbox','maxPrice','maxKm','minYear']) $(id).value = '';
+  $('includeRejected').checked = false;
+  $('newOnly').checked = false;
+  $('riskOnly').checked = false;
+  $('savedOnly').checked = false;
+  $('includeSkipped').checked = false;
+  $('includeUnavailable').checked = false;
+  $('sort').value = 'best';
+  load();
+}
+
+function renderStats(s, version, preferred) {
+  $('freshness').textContent = `v${version} · ${preferred} priority match${preferred === 1 ? '' : 'es'} · data updated ${ago(s.latestRunAt)}`;
+  $('stats').innerHTML = `
+    <div class="stat lead"><b>${s.inspect}</b>worth viewing</div>
+    <div class="stat"><b>${s.ask}</b>ask seller</div>
+    <div class="stat"><b>${s.watch}</b>watching</div>
+    <div class="stat"><b>${s.total}</b>in results</div>
+    <div class="stat"><b>${s.newTotal}</b>new</div>
+    <div class="stat"><b>${s.rejectedTotal}</b>hidden rejects</div>`;
+}
+
+function renderSourceOptions(items) {
+  const sel = $('source');
+  const current = sel.value || new URLSearchParams(location.search).get('source') || '';
+  const sources = [...new Set(items.map(i => i.listing.source))].sort();
+  if (sel.options.length - 1 === sources.length && sources.every((s,i) => sel.options[i+1]?.value === s)) return;
+  sel.innerHTML = '<option value="">All sources</option>' + sources.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  sel.value = current;
+}
+
+function renderCarOptions(facets, items) {
+  const makeSel = $('make');
+  const modelSel = $('model');
+  const desiredMake = makeSel.value || pendingMake;
+  const desiredModel = modelSel.value || pendingModel;
+  const makes = facets?.makes ?? [...new Set(items.map((item) => item.listing.make).filter(Boolean))].sort();
+  if (makeSel.options.length - 1 !== makes.length || makes.some((value, index) => makeSel.options[index + 1]?.value !== value)) {
+    makeSel.innerHTML = '<option value="">All makes</option>' + makes.map((value) => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+  }
+  makeSel.value = makes.includes(desiredMake) ? desiredMake : '';
+  pendingMake = '';
+  const models = facets?.models ?? [...new Set(items.map((item) => item.listing.model).filter(Boolean))].sort();
+  if (modelSel.options.length - 1 !== models.length || models.some((value, index) => modelSel.options[index + 1]?.value !== value)) {
+    modelSel.innerHTML = '<option value="">All models</option>' + models.map((value) => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+  }
+  modelSel.value = models.includes(desiredModel) ? desiredModel : '';
+  pendingModel = '';
+}
+
+function renderBodyOptions(facets, items) {
+  const sel = $('body');
+  const current = sel.value || new URLSearchParams(location.search).get('body') || '';
+  const values = facets?.bodyTypes ?? [...new Set(items.map((item) => item.listing.bodyType).filter(Boolean))].sort();
+  if (sel.options.length - 1 !== values.length || values.some((value, index) => sel.options[index + 1]?.value !== value)) {
+    sel.innerHTML = '<option value="">All body types</option>' + values.map((value) => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
+  }
+  sel.value = values.includes(current) ? current : '';
+}
+
+const verdictHelp = {
+  inspect: 'Passes hard gates and family fields are known; score >= 65. Worth a viewing, not a guarantee.',
+  ask: 'Passes hard gates, but seats/doors/ISOFIX/body type are unknown. Ask the seller before booking.',
+  watch: 'Passes hard gates, but the relative fit score is below 65. Keep watching.',
+  reject: 'Failed a hard gate or red flag; score 0. Revisit only if data or criteria change.',
+};
+
+function card({listing, evaluation, action, analysis, laya, saved, isNew}) {
+  const unavailable = Boolean(listing.delistedAt);
+  const reasons = evaluation.hardFailures.length
+    ? evaluation.hardFailures.map(esc).join(' · ')
+    : evaluation.unknowns.length
+      ? 'Unknowns: ' + esc(evaluation.unknowns.join(', '))
+      : evaluation.reasons.filter((reason) => !reason.startsWith('priority:')).map(esc).join(' · ');
+  const flags = listing.redFlags.length ? `<div class="flags">Flags: ${esc(listing.redFlags.join(', '))}</div>` : '';
+  const acted = action
+    ? `<div class="user">Your action: <b>${esc(action.action)}</b>${action.note ? ' — ' + esc(action.note) : ''}
+        <button type="button" onclick="noteAction('${esc(listing.source)}','${esc(listing.externalId)}','${esc(action.action)}')">${action.note ? 'Edit note' : 'Add note'}</button>
+        <button type="button" onclick="undoAction('${esc(listing.source)}','${esc(listing.externalId)}')">Undo</button></div>`
+    : '';
+  const prefHtml = evaluation.preferenceMatches?.length
+    ? `<div class="pref"><span class="pref-label">Priority</span>${evaluation.preferenceMatches.map((m) => `<span class="pref-chip">${esc(m.label)} <b>+${m.weight}</b></span>`).join('')}</div>`
+    : '';
+  const analysisHtml = analysis?.analysis
+    ? `<div class="analysis"><b>Analysis:</b> ${esc(analysis.analysis.summary)}${analysis.analysis.questions?.length ? `<br><b>Ask:</b> ${esc(analysis.analysis.questions.slice(0, 3).join(' | '))}` : ''}</div>`
+    : '';
+  const layaHtml = laya?.enabled
+    ? `<div class="laya ${(laya.risk?.score ?? 0) >= 1.5 ? 'risk' : ''}"><b>Laya advisory:</b> family ${esc(laya.familyFit?.choice ?? '?')} (${(laya.familyFit?.confidence ?? 0).toFixed(2)}) · risk ${(laya.risk?.score ?? 0).toFixed(2)}${(laya.risk?.score ?? 0) >= 1.5 ? ' · mechanical risk review' : ''} · action ${esc(laya.action?.choice ?? '?')} · ${laya.deferToDeepSeek ? 'escalated' : 'triaged'} (${(laya.confidence ?? 0).toFixed(2)})</div>`
+    : '';
+  const sourceNote = listing.source === 'autouncle' && (listing.seats === null || listing.doors === null || listing.hasIsofix === null)
+    ? '<div class="source-note">AutoUncle list page has no seats / doors / ISOFIX — verify on the listing, or it stays ASK.</div>'
+    : '';
+  const media = listing.imageUrl
+    ? `<div class="card-media"><img src="${esc(listing.imageUrl)}" alt="${esc(listing.title)} — listing photo" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=&quot;thumb-empty&quot;>No photo</div>'" /></div>`
+    : '<div class="card-media no-photo"><div class="thumb-empty">No photo</div></div>';
+  const unavailableNote = unavailable
+    ? `<div class="gone-note"><b>No longer available</b>${listing.delistReason ? ` — ${esc(listing.delistReason)}` : ''}${listing.availabilityCheckedAt ? ` · checked ${esc(ago(listing.availabilityCheckedAt))}` : ''}</div>`
+    : '';
+  const actions = unavailable
+    ? `<div class="actions">
+        <button type="button" onclick="restoreListing('${esc(listing.source)}','${esc(listing.externalId)}')">Restore</button>
+        <button type="button" onclick="openDetails('${esc(listing.source)}','${esc(listing.externalId)}')">Details</button>
+        <span class="user">Retired from the working list.</span>
+      </div>`
+    : `<div class="actions">
+      <button class="inspect" aria-label="Inspect ${esc(listing.title)}" onclick="mark('${esc(listing.source)}','${esc(listing.externalId)}','inspect')">Inspect</button>
+      <button aria-label="Watch ${esc(listing.title)}" onclick="mark('${esc(listing.source)}','${esc(listing.externalId)}','watch')">Watch</button>
+      <button class="skip" aria-label="Skip ${esc(listing.title)}" onclick="mark('${esc(listing.source)}','${esc(listing.externalId)}','skip')">Skip</button>
+      <button class="skip" aria-label="Mark ${esc(listing.title)} gone or sold" onclick="markGone('${esc(listing.source)}','${esc(listing.externalId)}','${esc(listing.title)}')">Mark gone / sold</button>
+      <button type="button" onclick="openDetails('${esc(listing.source)}','${esc(listing.externalId)}')">Details</button>
+      <button type="button" class="${saved ? 'saved' : ''}" onclick="saveListing('${esc(listing.source)}','${esc(listing.externalId)}')">${saved ? 'Saved' : 'Save'}</button>
+    </div>`;
+  return `<article class="card ${action ? 'act-' + esc(action.action) : ''} ${unavailable ? 'gone' : ''}">
+    ${media}
+    <div class="card-body">
+    <div class="head">
+      ${unavailable
+        ? `<span class="badge" style="background:var(--bad)">Gone</span>`
+        : `<span class="badge" title="${esc(verdictHelp[evaluation.verdict] || '')}" style="background:${badgeColor[evaluation.verdict] || 'var(--watch)'}">${esc({ inspect: 'Inspect', ask: 'Ask', watch: 'Watch', reject: 'Reject' }[evaluation.verdict] || evaluation.verdict)}</span>`}
+      ${isNew ? '<span class="new">New</span>' : ''}
+      <span class="seen" title="First seen in this database">first seen ${esc(ago(listing.firstSeenAt))}</span>
+      <span class="score" title="Relative fit score 0-100; not a probability">${evaluation.score.toFixed(1)}</span>
+      <span class="conf" title="Data completeness 0-1; not model certainty">confidence ${evaluation.confidence.toFixed(2)}</span>
+      <h3 class="title"><a href="${esc(listing.url)}" target="_blank" rel="noreferrer">${esc(listing.title)}</a></h3>
+      <span class="source">${esc({ autoscout24: 'AutoScout24', kleinanzeigen: 'Kleinanzeigen', autouncle: 'AutoUncle', mobile_de: 'mobile.de', manual: 'Manual' }[listing.source] || listing.source)}</span>
+    </div>
+    <div class="meta">
+      <span class="price">${eur(listing.priceEur)}</span><span>${km(listing.mileageKm)}</span>
+      <span>${esc(listing.firstRegistration?.slice(0,7) ?? '—')}</span>
+      <span>${esc(listing.fuel ?? '—')}</span><span>${esc(listing.transmission ?? '—')}</span>
+      <span>${esc(listing.city ?? '—')}</span><span>${listing.distanceKm ?? '?'} km</span>
+    </div>
+    <div class="family"><span>${esc(listing.seats ?? '?')} seats</span><span>${esc(listing.doors ?? '?')} doors</span><span>ISOFIX ${listing.hasIsofix == null ? '?' : listing.hasIsofix ? 'yes' : 'no'}</span><span>${esc(listing.bodyType ?? 'body ?')}</span></div>
+    <div class="detail">${reasons}</div>
+    ${flags}
+    ${prefHtml}
+    ${layaHtml}
+    ${sourceNote}
+    ${analysisHtml}
+    ${acted}
+    ${unavailableNote}
+    ${actions}
+    </div>
+  </article>`;
+}
+
+let toastTimer = null;
+function showToast(message, undo) {
+  const toast = $('toast');
+  toast.innerHTML = `${esc(message)}${undo ? ' <button type="button">Undo</button>' : ''}`;
+  if (undo) toast.querySelector('button').addEventListener('click', async () => {
+    await undo();
+    toast.classList.remove('show');
+  });
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+}
+
+
+const detailDialog = $('detailDialog');
+function closeDetails() {
+  detailDialog.close();
+  document.body.classList.remove('detail-open');
+}
+$('closeDetail').addEventListener('click', closeDetails);
+detailDialog.addEventListener('click', (event) => { if (event.target === detailDialog) closeDetails(); });
+detailDialog.addEventListener('close', () => document.body.classList.remove('detail-open'));
+
+function bar(label, value) {
+  const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
+  return `<div class="metric"><span>${esc(label)}</span><div class="bar"><i style="width:${pct}%"></i></div><b>${pct}%</b></div>`;
+}
+
+function researchHtml(research) {
+  if (!research) {
+    return `<div class="research-box">
+      <p>No deep research saved for this car yet.</p>
+      <button type="button" id="runResearch">Run deep research</button>
+      <p class="pref-note">Uses Firecrawl web search + DeepSeek when keys are configured; otherwise it uses the curated variant knowledge base.</p>
+    </div>`;
+  }
+  const basisLabel = research.researchBasis === 'web+model'
+    ? 'Web + model'
+    : research.researchBasis === 'model_knowledge' ? 'Model knowledge — verify' : 'Rules only';
+  const basisClass = research.researchBasis === 'web+model' ? 'basis' : 'basis warn';
+  const list = (items) => items?.length ? `<ul class="detail-list">${items.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p class="pref-note">None listed.</p>';
+  const problems = research.commonProblems?.length
+    ? research.commonProblems.map((p) => `<div class="problem">
+        <b>${esc(p.issue)}</b> <span class="meta">${esc(p.likelihood)} likelihood · ${esc(p.costEur)}</span>
+        <p><b>Check:</b> ${esc(p.check)}</p>
+        ${p.symptoms?.length ? `<p><b>Symptoms:</b> ${esc(p.symptoms.join(' · '))}</p>` : ''}
+      </div>`).join('')
+    : '<p class="pref-note">No variant-specific problems returned.</p>';
+  const sources = research.sources?.length
+    ? `<ul class="source-list">${research.sources.map((source) => `<li><a href="${esc(source.url)}" target="_blank" rel="noreferrer">${esc(source.title)}</a></li>`).join('')}</ul>`
+    : '<p class="pref-note">No external sources attached.</p>';
+  return `<div class="research-box">
+    <span class="${basisClass}">${esc(basisLabel)}</span>
+    <p>${esc(research.summary)}</p>
+    <div class="detail-section"><h3>Good points</h3>${list(research.goodPoints)}</div>
+    <div class="detail-section"><h3>Bad points / gaps</h3>${list(research.badPoints)}</div>
+    <div class="detail-section"><h3>Common problems — ${esc(research.commonProblems?.length ?? 0)}</h3>${problems}</div>
+    <div class="detail-section"><h3>Inspection checklist</h3>${list(research.inspectionChecklist)}</div>
+    <div class="detail-section"><h3>Ask the seller</h3>${list(research.sellerQuestions)}</div>
+    <div class="detail-section"><h3>Negotiation</h3>${list(research.negotiation)}</div>
+    ${research.recalls?.length ? `<div class="detail-section"><h3>Recalls / known campaigns</h3>${list(research.recalls)}</div>` : ''}
+    <div class="detail-section"><h3>Sources</h3>${sources}</div>
+    <div class="detail-actions"><button type="button" id="runResearch">Refresh research</button></div>
+  </div>`;
+}
+
+function priceSignalHtml(listing, priceChange) {
+  const latest = priceChange?.latest ?? null;
+  const previous = priceChange?.previous ?? null;
+  const current = latest?.priceEur ?? listing.priceEur;
+  const count = priceChange?.observationCount ?? 0;
+  const parts = [
+    `<span>Last seen <b>${esc(ago(listing.lastSeenAt))}</b></span>`,
+    `<span>Current <b class="price">${esc(eur(current))}</b></span>`,
+  ];
+  if (latest) parts.push(`<span class="meta">observed ${esc(latest.observedAt.slice(0, 10))}</span>`);
+  if (previous?.priceEur != null) {
+    parts.push(`<span>Previous <b class="price">${esc(eur(previous.priceEur))}</b> <span class="meta">(${esc(previous.observedAt.slice(0, 10))})</span></span>`);
+  }
+  const delta = priceChange?.deltaEur ?? null;
+  if (delta != null && delta !== 0) {
+    const dropped = delta < 0;
+    parts.push(`<span class="${dropped ? 'price-drop' : 'price-up'}">${dropped ? 'Price dropped' : 'Price increased'} ${esc(eur(Math.abs(delta)))}</span>`);
+  } else if (delta === 0) {
+    parts.push('<span class="price-flat">Price unchanged</span>');
+  }
+  const note = count === 0
+    ? 'No price observations stored yet — the next fetch will record one.'
+    : `${count} price observation${count === 1 ? '' : 's'} stored.`;
+  return `<div class="price-signal">${parts.join(' ')}</div><p class="pref-note">${esc(note)}</p>`;
+}
+
+function renderDetail(data) {
+  const { listing, evaluation, action, analysis, laya, research, saved, priceChange, outcome } = data;
+  document.querySelector('#detailTitle').textContent = 'Car details';
+  const image = listing.imageUrl
+    ? `<img src="${esc(listing.imageUrl)}" alt="${esc(listing.title)}" />`
+    : '<div class="thumb-empty">No photo</div>';
+  const layaLine = laya?.enabled
+    ? `<div class="laya ${(laya.risk?.score ?? 0) >= 1.5 ? 'risk' : ''}"><b>Laya advisory:</b> family ${esc(laya.familyFit?.choice ?? '?')} · risk ${(laya.risk?.score ?? 0).toFixed(2)} · action ${esc(laya.action?.choice ?? '?')} · ${laya.deferToDeepSeek ? 'escalated' : 'triaged'}</div>`
+    : '<p class="pref-note">No Laya classification stored. Run a fetch or <code>npm run laya:classify</code>.</p>';
+  const analysisBlock = analysis?.analysis
+    ? `<div class="analysis"><b>DeepSeek analysis:</b> ${esc(analysis.analysis.summary)}${analysis.analysis.questions?.length ? `<br><b>Ask:</b> ${esc(analysis.analysis.questions.slice(0, 5).join(' | '))}` : ''}</div>`
+    : '<p class="pref-note">No DeepSeek analysis stored for this car.</p>';
+  const reasons = evaluation.hardFailures.length ? evaluation.hardFailures : evaluation.unknowns.length ? evaluation.unknowns.map((field) => `unknown: ${field}`) : evaluation.reasons;
+  const outcomeLabels = {
+    bought: 'Bought',
+    sold: 'Sold / no longer available',
+    rejected_after_viewing: 'Rejected after viewing',
+    too_far: 'Too far / impractical',
+    inspection_failed: 'Inspection failed',
+    other: 'Other',
+  };
+  const outcomeValue = outcome?.outcome ?? '';
+  const outcomeSection = `
+    <p class="pref-note">${outcome ? `Recorded: ${esc(outcomeLabels[outcome.outcome] ?? outcome.outcome)} · ${esc(outcome.createdAt.slice(0, 10))}${outcome.notes ? ` · ${esc(outcome.notes)}` : ''}` : 'No purchase outcome recorded yet.'}</p>
+    <div class="message-tools">
+      <select id="outcomeKind" aria-label="Purchase outcome">
+        <option value="">Choose outcome</option>
+        ${Object.entries(outcomeLabels).map(([value, label]) => `<option value="${value}" ${outcomeValue === value ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+      </select>
+      <button type="button" id="saveOutcome">Save outcome</button>
+    </div>
+    <textarea class="outcome-notes" id="outcomeNotes" aria-label="Outcome notes" placeholder="Optional: inspection result, seller response, reason.">${esc(outcome?.notes ?? '')}</textarea>`;
+  const goneBanner = listing.delistedAt
+    ? `<div class="unavailable-box"><b>No longer available</b><span>${esc(listing.delistReason ?? 'Source confirmed the listing is gone.')}${listing.availabilityCheckedAt ? ` · checked ${esc(ago(listing.availabilityCheckedAt))}` : ''}</span></div>`
+    : '';
+  $('detailBody').innerHTML = `
+    ${goneBanner}
+    <div class="detail-hero">
+      ${image}
+      <div>
+        <h3>${esc(listing.title)}</h3>
+        <div class="meta">${esc(listing.make ?? '')} ${esc(listing.model ?? '')} · ${esc(listing.firstRegistration?.slice(0, 10) ?? 'year ?')} · ${esc(listing.city ?? '')}</div>
+        <div class="detail-price">${eur(listing.priceEur)} <span class="meta">${km(listing.mileageKm)}</span></div>
+        <div class="detail-actions">
+          <button type="button" class="save-btn ${saved ? 'saved' : ''}" id="toggleSave">${saved ? 'Saved' : 'Save this car'}</button>
+          <button type="button" onclick="openDetails('${esc(listing.source)}','${esc(listing.externalId)}')">Refresh</button>
+          <button type="button" id="checkAvailability">Check availability</button>
+          <a href="${esc(listing.url)}" target="_blank" rel="noreferrer">Open listing</a>
+        </div>
+        <div class="head" style="margin-top:10px"><span class="badge" style="background:${listing.delistedAt ? 'var(--bad)' : badgeColor[evaluation.verdict]}">${esc(listing.delistedAt ? 'Gone' : { inspect: 'Inspect', ask: 'Ask', watch: 'Watch', reject: 'Reject' }[evaluation.verdict] || evaluation.verdict)}</span><span class="score">${evaluation.score.toFixed(1)}</span><span class="conf">conf ${evaluation.confidence.toFixed(2)}</span></div>
+      </div>
+    </div>
+    <div class="detail-section"><h3>Price history</h3>${priceSignalHtml(listing, priceChange)}</div>
+    <div class="detail-section"><h3>Purchase outcome</h3>${outcomeSection}</div>
+    <div class="detail-section"><h3>Why this verdict</h3><ul class="detail-list">${reasons.map((reason) => `<li>${esc(reason)}</li>`).join('')}</ul></div>
+    <div class="detail-section"><h3>Score breakdown</h3>
+      ${bar('Family', evaluation.components.family)}
+      ${bar('Deal', evaluation.components.deal)}
+      ${bar('Age', evaluation.components.age)}
+      ${bar('Mileage', evaluation.components.mileage)}
+      ${bar('Distance', evaluation.components.distance)}
+      ${bar('Evidence', evaluation.components.evidence)}
+      ${evaluation.preferenceBoost ? `<p class="pref">Priority boost: +${evaluation.preferenceBoost}</p>` : ''}
+    </div>
+    <div class="detail-section"><h3>Laya</h3>${layaLine}</div>
+    <div class="detail-section"><h3>Analysis</h3>${analysisBlock}</div>
+    <div class="detail-section"><h3>Deep research</h3>${researchHtml(research)}</div>
+    <div class="detail-section"><h3>Write to the seller</h3>
+      <div class="message-tools">
+        <select id="messageLanguage" aria-label="Message language">
+          <option value="auto" ${data.message ? (data.message.language === data.message.detectedLanguage ? 'selected' : '') : 'selected'}>Auto — match ad language</option>
+          <option value="de" ${data.message?.language === 'de' ? 'selected' : ''}>Deutsch — formell</option>
+          <option value="en" ${data.message?.language === 'en' ? 'selected' : ''}>English — formal</option>
+        </select>
+        <button type="button" id="generateMessage">${data.message ? 'Regenerate' : 'Generate message'}</button>
+        <button type="button" id="copyMessage" ${data.message ? '' : 'disabled'}>Copy</button>
+        <button type="button" id="copyOpenMessage" ${data.message ? '' : 'disabled'}>Copy & open listing</button>
+      </div>
+      <textarea class="message-text" id="messageText" aria-label="Seller message">${esc(data.message?.messageText ?? '')}</textarea>
+      <p class="message-note">The ad language is detected automatically (${(data.message?.detectedLanguage || data.message?.language) === 'en' ? 'English' : 'German'}). The draft is based on this car's rules, known variant problems and missing data. AutoScout24 has no public send API: copy the message into the seller's contact form. Nothing is sent automatically.</p>
+    </div>
+    <div class="detail-section"><h3>Seller / data</h3><p class="meta">${esc(listing.sellerType)} · ${esc(listing.sellerName ?? 'seller unknown')} · ${esc(listing.description?.slice(0, 500) ?? 'no description')}</p></div>
+  `;
+  $('toggleSave').addEventListener('click', async () => {
+    await saveListing(listing.source, listing.externalId);
+    await openDetails(listing.source, listing.externalId);
+  });
+  $('checkAvailability')?.addEventListener('click', async () => {
+    const button = $('checkAvailability');
+    button.disabled = true;
+    button.textContent = 'Checking…';
+    try {
+      const res = await fetch('/api/availability', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ source: listing.source, externalId: listing.externalId }),
+      });
+      const payload = await res.json();
+      if (!res.ok) { showToast(payload.error || 'Could not check availability.'); return; }
+      await openDetails(listing.source, listing.externalId);
+      showToast(payload.status === 'gone'
+        ? 'No longer available. Removed from the working list.'
+        : payload.status === 'available'
+          ? 'Listing is still live.'
+          : 'Could not confirm availability; nothing was hidden.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Check availability';
+    }
+  });
+  $('saveOutcome').addEventListener('click', async () => {
+    const outcomeKind = $('outcomeKind').value;
+    if (!outcomeKind) { showToast('Choose an outcome first.'); return; }
+    const res = await fetch('/api/outcome', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        source: listing.source,
+        externalId: listing.externalId,
+        outcome: outcomeKind,
+        notes: $('outcomeNotes').value.trim() || null,
+      }),
+    });
+    const payload = await res.json();
+    if (!res.ok) { showToast(payload.error || 'Could not save outcome.'); return; }
+    await openDetails(listing.source, listing.externalId);
+    showToast('Outcome recorded.');
+  });
+  const run = $('runResearch');
+  if (run) run.addEventListener('click', async () => {
+    run.disabled = true;
+    run.textContent = 'Researching…';
+    const res = await fetch('/api/research', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ source: listing.source, externalId: listing.externalId }),
+    });
+    if (!res.ok) { showToast('Research failed.'); run.disabled = false; run.textContent = 'Run deep research'; return; }
+    await openDetails(listing.source, listing.externalId);
+    showToast('Research saved.');
+  });
+
+  const generate = $('generateMessage');
+  if (generate) generate.addEventListener('click', async () => {
+    generate.disabled = true;
+    generate.textContent = 'Writing…';
+    const res = await fetch('/api/message', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        source: listing.source,
+        externalId: listing.externalId,
+        language: $('messageLanguage').value,
+      }),
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      showToast(payload.error || 'Could not generate message.');
+      generate.disabled = false;
+      generate.textContent = 'Generate message';
+      return;
+    }
+    await openDetails(listing.source, listing.externalId);
+    showToast(`Message saved in ${payload.message.language === 'de' ? 'German' : 'English'}.`);
+  });
+
+  const copy = $('copyMessage');
+  if (copy) copy.addEventListener('click', async () => {
+    const text = $('messageText').value;
+    if (!text.trim()) return;
+    try { await navigator.clipboard.writeText(text); showToast('Message copied.'); }
+    catch { $('messageText').select(); showToast('Select and copy the message.'); }
+  });
+
+  const copyOpen = $('copyOpenMessage');
+  if (copyOpen) copyOpen.addEventListener('click', async () => {
+    const text = $('messageText').value;
+    try { await navigator.clipboard.writeText(text); } catch { $('messageText').select(); }
+    window.open(listing.url, '_blank', 'noopener');
+    showToast('Copied. Paste it into the seller contact form.');
+  });
+}
+
+async function openDetails(source, externalId) {
+  if (!detailDialog.open) detailDialog.showModal();
+  document.body.classList.add('detail-open');
+  $('detailBody').innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div>';
+  const res = await fetch(`/api/listing?source=${encodeURIComponent(source)}&externalId=${encodeURIComponent(externalId)}`);
+  if (!res.ok) { $('detailBody').innerHTML = '<div class="empty">Could not load this car.</div>'; return; }
+  renderDetail(await res.json());
+}
+
+async function saveListing(source, externalId) {
+  const res = await fetch('/api/save', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ source, externalId }),
+  });
+  const data = await res.json();
+  if (!res.ok) { showToast('Could not save this car.'); return; }
+  showToast(data.saved ? 'Saved this car.' : 'Removed from saved.');
+  await load();
+}
+
+async function mark(source, externalId, action) {
+  const res = await fetch('/api/action', {
+    method: 'POST',
+    headers: {'content-type':'application/json'},
+    body: JSON.stringify({ source, externalId, action, note: null }),
+  });
+  if (!res.ok) { showToast('Could not save your action.'); return; }
+  await load();
+  showToast(`Marked ${action}.`, () => undoAction(source, externalId));
+}
+
+async function noteAction(source, externalId, action) {
+  const note = window.prompt('Note / reason for this car:', '');
+  if (note === null) return;
+  await fetch('/api/action', {
+    method: 'POST',
+    headers: {'content-type':'application/json'},
+    body: JSON.stringify({ source, externalId, action, note: note.trim() || null }),
+  });
+  await load();
+  showToast(note.trim() ? 'Note saved.' : 'Note cleared.');
+}
+
+async function markGone(source, externalId, title) {
+  if (!confirm(`Mark "${title}" as gone or sold? It will leave the active list.`)) return;
+  const res = await fetch('/api/listing/gone', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ source, externalId }),
+  });
+  const data = await res.json();
+  if (!res.ok) { showToast(data.error || 'Could not mark this listing gone.'); return; }
+  await load();
+  showToast('Marked gone. Use “Show unavailable” to restore it.');
+}
+
+async function restoreListing(source, externalId) {
+  const res = await fetch('/api/listing/restore', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ source, externalId }),
+  });
+  const data = await res.json();
+  if (!res.ok) { showToast(data.error || 'Could not restore this listing.'); return; }
+  await load();
+  showToast('Restored to the active list.');
+}
+
+async function undoAction(source, externalId) {
+  await fetch('/api/action', {
+    method: 'DELETE',
+    headers: {'content-type':'application/json'},
+    body: JSON.stringify({ source, externalId }),
+  });
+  await load();
+  showToast('Action removed.');
+}
+
+let searchTimer = null;
+$('q').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(load, 220);
+});
+for (const id of ['verdict','source','body','gearbox','maxPrice','maxKm','minYear','sort']) {
+  $(id).addEventListener('input', load);
+  $(id).addEventListener('change', load);
+}
+$('make').addEventListener('change', () => { $('model').value = ''; load(); });
+$('model').addEventListener('change', load);
+$('toggleFilters').addEventListener('click', () => {
+  const open = $('toolbar').classList.toggle('open');
+  $('toggleFilters').setAttribute('aria-expanded', String(open));
+});
+$('reset').addEventListener('click', () => {
+  clearFilters();
+});
+async function fetchNow() {
+  if (criteriaDirty) {
+    $('fetchStatus').textContent = 'Save criteria first — Fetch now uses the saved profile.';
+    $('criteriaMsg').textContent = 'Unsaved criteria changes would be lost. Save criteria, then Fetch now.';
+    return;
+  }
+  const res = await fetch('/api/fetch', { method: 'POST' });
+  const data = await res.json();
+  if (res.status === 409) {
+    $('fetchStatus').textContent = 'A fetch is already running.';
+    pollFetch();
+    return;
+  }
+  if (!res.ok) {
+    $('fetchStatus').textContent = 'Error: ' + (data.error || 'could not start fetch');
+    return;
+  }
+  $('fetchNow').disabled = true;
+  $('fetchStatus').textContent = 'Fetching… starting';
+  pollFetch();
+}
+
+async function pollFetch() {
+  const res = await fetch('/api/fetch/status');
+  const data = await res.json();
+  const job = data.job;
+  if (!job) {
+    $('fetchNow').disabled = false;
+    return;
+  }
+  const last = job.log?.length ? job.log[job.log.length - 1] : '';
+  if (job.status === 'running') {
+    $('fetchNow').disabled = true;
+    $('fetchStatus').textContent = `Fetching… ${last}`;
+    await load();
+    setTimeout(pollFetch, 1500);
+    return;
+  }
+  $('fetchNow').disabled = false;
+  $('fetchStatus').textContent = job.status === 'done'
+    ? `Fetch complete (exit ${job.exitCode}). ${last}`
+    : `Fetch failed (exit ${job.exitCode}). ${last}`;
+  await loadCriteria();
+  await load();
+}
+
+$('saveCriteria').addEventListener('click', saveCriteria);
+$('learnPreferences').addEventListener('click', async () => {
+  if (!confirm('Learn preference weights from your saved cars? This creates a new criteria version and clears old analyses. It needs at least 2 saved cars.')) return;
+  const res = await fetch('/api/preferences/learn', { method: 'POST' });
+  const data = await res.json();
+  $('criteriaMsg').textContent = data.message || (res.ok ? 'Learned preferences applied.' : 'Could not learn preferences.');
+  if (data.applied) {
+    await loadCriteria();
+    await load();
+  }
+});
+async function importUrl() {
+  const url = prompt('Paste a Kleinanzeigen, mobile.de or AutoUncle listing URL:');
+  if (!url) return;
+  $('importUrl').disabled = true;
+  $('fetchStatus').textContent = 'Importing listing…';
+  try {
+    const res = await fetch('/api/import-url', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'could not import listing');
+    $('fetchStatus').textContent = `Imported ${data.listing.title} (${data.evaluation.verdict}).`;
+    await load();
+  } catch (error) {
+    $('fetchStatus').textContent = 'Import failed: ' + error.message;
+  } finally {
+    $('importUrl').disabled = false;
+  }
+}
+$('fetchNow').addEventListener('click', fetchNow);
+$('importUrl').addEventListener('click', importUrl);
+$('addPref').addEventListener('click', () => addPrefRow());
+$('cPurchase').addEventListener('input', () => { updateAllIn(); markCriteriaDirty(); });
+$('cReserve').addEventListener('input', () => { updateAllIn(); markCriteriaDirty(); });
+document.querySelector('.criteria').addEventListener('input', markCriteriaDirty);
+document.querySelector('.criteria').addEventListener('change', markCriteriaDirty);
+$('includeRejected').addEventListener('change', load);
+$('newOnly').addEventListener('change', load);
+$('riskOnly').addEventListener('change', load);
+$('savedOnly').addEventListener('change', load);
+$('includeSkipped').addEventListener('change', load);
+$('includeUnavailable').addEventListener('change', load);
+$('analyzeTop').addEventListener('click', analyzeQualifying);
+restoreUrl();
+loadCriteria().then(load);
+</script>
+</body>
+</html>
