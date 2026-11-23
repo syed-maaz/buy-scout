@@ -289,16 +289,50 @@ export async function researchListing(
     };
   }
 
+  const compactListing = {
+    title: listing.title,
+    make: listing.make,
+    model: listing.model,
+    variant: listing.variant,
+    year: listing.firstRegistration,
+    priceEur: listing.priceEur,
+    mileageKm: listing.mileageKm,
+    fuel: listing.fuel,
+    transmission: listing.transmission,
+    bodyType: listing.bodyType,
+    seats: listing.seats,
+    doors: listing.doors,
+    hasIsofix: listing.hasIsofix,
+    huDue: listing.huDue,
+    sellerType: listing.sellerType,
+    city: listing.city,
+    distanceKm: listing.distanceKm,
+    priceLabel: listing.priceLabel,
+    priceMedianEur: listing.priceMedianEur,
+    damaged: listing.damaged,
+    redFlags: listing.redFlags,
+    equipment: listing.equipment.slice(0, 40),
+    description: listing.description?.slice(0, 1600) ?? null,
+  };
+  const compactEvaluation = {
+    verdict: evaluation.verdict,
+    hardPass: evaluation.hardPass,
+    score: evaluation.score,
+    confidence: evaluation.confidence,
+    reasons: evaluation.reasons,
+    hardFailures: evaluation.hardFailures,
+    unknowns: evaluation.unknowns,
+  };
   const prompt = `Du bist ein deutscher Gebrauchtwagen-Analyst. Erstelle eine vorsichtige, prüfbare Analyse für dieses Fahrzeug. Erfinde keine VIN, keine Historie und keine Reparaturbelege.
 
 Fahrzeug:
-${JSON.stringify(listing, null, 2)}
+${JSON.stringify(compactListing)}
 
 Regel-Ergebnis:
-${JSON.stringify(evaluation, null, 2)}
+${JSON.stringify(compactEvaluation)}
 
 Web-Suchergebnisse (nur als Hinweise, nicht als Wahrheit):
-${JSON.stringify(web, null, 2)}
+${JSON.stringify(web)}
 
 Antworte ausschließlich als JSON:
 {
@@ -318,7 +352,7 @@ Regeln: Keine erfundenen Quellen. Wenn du etwas nicht weißt, schreibe "unbekann
   const result = await callLlmJson({
     system: "Du antwortest nur mit validem JSON. Keine Halluzinationen.",
     user: prompt,
-    timeoutMs: 60_000,
+    timeoutMs: 120_000,
   });
   if (!result) {
     return {

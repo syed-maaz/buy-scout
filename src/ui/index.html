@@ -1074,9 +1074,9 @@ function bar(label, value) {
 function researchHtml(research) {
   if (!research) {
     return `<div class="research-box">
-      <p>No deep research saved for this car yet.</p>
+      <p id="researchStatus">No deep research saved for this car yet.</p>
       <button type="button" id="runResearch">Run deep research</button>
-      <p class="pref-note">Uses Firecrawl web search + DeepSeek when keys are configured; otherwise it uses the curated variant knowledge base.</p>
+      <p class="pref-note">Uses the configured LLM and optional Firecrawl web search. This can take 30–60 seconds.</p>
     </div>`;
   }
   const basisLabel = research.researchBasis === 'web+model'
@@ -1273,14 +1273,29 @@ function renderDetail(data) {
   if (run) run.addEventListener('click', async () => {
     run.disabled = true;
     run.textContent = 'Researching…';
-    const res = await fetch('/api/research', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ source: listing.source, externalId: listing.externalId }),
-    });
-    if (!res.ok) { showToast('Research failed.'); run.disabled = false; run.textContent = 'Run deep research'; return; }
-    await openDetails(listing.source, listing.externalId);
-    showToast('Research saved.');
+    const status = $('researchStatus');
+    if (status) status.textContent = 'Researching the model, known faults and inspection points. This can take up to a minute…';
+    showToast('Deep research started — this can take up to a minute.');
+    try {
+      const res = await fetch('/api/research', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ source: listing.source, externalId: listing.externalId }),
+      });
+      if (!res.ok) {
+        showToast('Research failed.');
+        return;
+      }
+      await openDetails(listing.source, listing.externalId);
+      showToast('Research saved.');
+    } catch {
+      showToast('Research failed — check that the local UI is still running.');
+    } finally {
+      if (run.isConnected) {
+        run.disabled = false;
+        run.textContent = 'Run deep research';
+      }
+    }
   });
 
   const generate = $('generateMessage');
