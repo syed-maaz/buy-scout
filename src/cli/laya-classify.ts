@@ -1,3 +1,4 @@
+import "../core/env.js";
 import { getActiveCriteria, latestListings, openDb, upsertLayaClassification } from "../db/index.js";
 import { evaluateCar } from "../domain/cars/evaluate.js";
 import { classifyListingWithLaya, layaEnabled } from "../intelligence/laya.js";

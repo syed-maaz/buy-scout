@@ -1,3 +1,4 @@
+import "../core/env.js";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";

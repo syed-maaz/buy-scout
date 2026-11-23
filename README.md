@@ -50,7 +50,8 @@ Current state is generated, not copied: run `npm run health`, `npm run eval`, an
 `npm test`. The active criteria are v18 (€7,000 car cap + €800 reserve, 200 km).
 
 Laya runs locally. DeepSeek is optional: without `DEEPSEEK_API_KEY` the analysis path
-returns the deterministic German fallback and labels it as such.
+returns the deterministic German fallback and labels it as such. `.env` is loaded at
+startup for the UI and the main CLIs; shell exports take precedence.
 
 > The `sources` table is the switch. Only enabled adapters are constructed. Direct
 > Kleinanzeigen access is experimental: its terms require written consent for crawlers,
@@ -60,6 +61,7 @@ returns the deterministic German fallback and labels it as such.
 
 ```bash
 npm install
+cp .env.example .env      # optional local config; never commit .env
 npm run typecheck
 npm test
 npm run fetch:as24 -- --pages 1 --delay 500

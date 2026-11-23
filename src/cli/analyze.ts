@@ -1,3 +1,4 @@
+import "../core/env.js";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getActiveCriteria, latestListings, openDb, upsertLayaClassification, upsertListingAnalysis } from "../db/index.js";

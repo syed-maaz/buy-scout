@@ -1,3 +1,4 @@
+import "../core/env.js";
 import { evaluateCar } from "../domain/cars/evaluate.js";
 import { getActiveCriteria, openDb, updateListingDetail, upsertListing } from "../db/index.js";
 import { importListingUrl } from "../sources/url-import.js";

@@ -1,3 +1,4 @@
+import "../core/env.js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { AutoScout24Adapter, normaliseAs24Listing, type As24Listing } from "../sources/autoscout24.js";

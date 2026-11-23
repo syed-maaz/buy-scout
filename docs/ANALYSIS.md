@@ -130,7 +130,7 @@ The prompt explicitly forbids inventing history, a VIN, or accident freedom. The
 persisted as `{ source: "deepseek", model, generatedAt, … }`.
 
 :::warning Key alone is not enough
-`DEEPSEEK_API_KEY` without `DEEPSEEK_BASE_URL` silently falls back to the deterministic path — `baseUrl()` returns `null` and `analyzeListing` returns `fallbackAnalysis` before any request. `.env.example` contains empty placeholders, but there is no `dotenv` dependency: putting values in `.env` does nothing. Export them in the shell. Never commit a real key.
+`DEEPSEEK_API_KEY` without `DEEPSEEK_BASE_URL` silently falls back to the deterministic path — `baseUrl()` returns `null` and `analyzeListing` returns `fallbackAnalysis` before any request. Both can live in `.env`. Copy `.env.example` to `.env` and fill the values. The UI and main CLIs load `.env` at startup; real shell exports take precedence. There is still no `dotenv` package, so the file is read by the application loader, not by an external tool. Never commit a real key.
 :::
 
 ---

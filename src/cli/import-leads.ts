@@ -1,3 +1,4 @@
+import "../core/env.js";
 import { readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { getActiveCriteria, openDb, updateListingDetail, upsertListing } from "../db/index.js";
