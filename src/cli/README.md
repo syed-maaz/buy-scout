@@ -133,7 +133,7 @@ npm script → file and primary exports:
 - Console output on stdout/stderr is part of the contract (progress, integrity warnings,
   ranked shortlists, failure playbooks) and is what `src/ui/server.ts` captures.
 - Reads environment: `DB_PATH`, `RAW_DIR`, `FETCH_*`, `AVAILABILITY_*`,
-  `DEEPSEEK_*` and `LAYA_*`.
+  `LLM_*` and `LAYA_*`.
 - `email.ts` reads a directory of `.eml`/`.html`/`.txt` files and falls back to exit code
   1 when the directory is unreadable (`email.ts:16`–`email.ts:23`).
 

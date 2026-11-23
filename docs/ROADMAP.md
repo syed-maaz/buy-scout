@@ -111,7 +111,7 @@ The "plan status" column is stale in places: the interactive UI, the email parse
 |---|---|---|
 | mobile.de search | Anti-bot; the search page does not return usable HTML | Saved-search email → Firecrawl detail, or manual URL import |
 | Laya weights | ~1.7 GB download, first-run only | One machine with bandwidth; Laya is otherwise on by default (`LAYA_ENABLED=0` disables) |
-| DeepSeek | Requires **both** `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` | Key plus base URL in the environment |
+| DeepSeek | Requires **both** `LLM_API_KEY` and `LLM_BASE_URL` | Key plus base URL in the environment |
 | Human labels | Buyer's own time and judgement | 50 blind Inspect / Watch / Skip decisions |
 | Firecrawl | Third-party key for blocked-source detail pages | Account and key; optional in POC |
 
@@ -199,7 +199,7 @@ machine.
 | Kleinanzeigen | **Yes** — live | Outbound network only | Direct search and detail |
 | mobile.de | **Partial** — page 1 with profile | `BUY_SCOUT_CHROME_PROFILE`; official feed for durability | Email/URL import is stable |
 | Laya | **Yes** — on by default for CLI runs | A ~1.7 GB weight download on first use | Adapter code; no recorded live classification |
-| DeepSeek analysis | **No** — fallback only | `DEEPSEEK_API_KEY` **and** `DEEPSEEK_BASE_URL`; optional `DEEPSEEK_MODEL` | `deterministic-fallback` rows only |
+| DeepSeek analysis | **No** — fallback only | `LLM_API_KEY` **and** `LLM_BASE_URL`; optional `LLM_MODEL` | `deterministic-fallback` rows only |
 | Human labels | **No** | Buyer's time; no label schema exists yet | In-UI actions only |
 | Firecrawl | **No** | Account and key | Optional for the POC |
 
@@ -212,7 +212,7 @@ Practical consequences:
   no live classification has been recorded; DeepSeek has only produced fallback rows. No doc
   should claim their quality.
 - **`.env.example` documents** `DB_PATH`, `RAW_DIR`, the search brief, fetch tuning,
-  `UI_PORT`, the `LAYA_*` variables and the `DEEPSEEK_*` / `FIRECRAWL_API_KEY` placeholders.
+  `UI_PORT`, the `LAYA_*` variables, the `LLM_*` variables and the `FIRECRAWL_API_KEY` placeholder.
 - **Credential-dependent does not mean broken.** Each has a working degraded path: fallback
   analysis, heuristic distance, email leads, two live sources. The POC is usable without
   any of them, which is why status is "feature-complete" and not "blocked".

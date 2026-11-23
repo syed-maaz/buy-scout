@@ -76,7 +76,7 @@ It runs `health` at the end and does **not** start the UI.
 
 1. **Fetch** — `npm run fetch:as24`, or click **Fetch now** in the UI. Uses the saved active criteria. New cards are scored, known cards are touched, details are fetched only for new or changed cars. A small stale shortlist is checked against the source detail page; confirmed-gone cars are hidden.
 2. **Review quickly** — `npm run score -- --top 20` prints the current top 20 without writing anything.
-3. **Analyse** — `npm run analyze` selects every non-rejected card clearing the score and confidence thresholds and writes summaries and questions. Without `DEEPSEEK_API_KEY` it uses the deterministic fallback.
+3. **Analyse** — `npm run analyze` selects every non-rejected card clearing the score and confidence thresholds and writes summaries and questions. Without `LLM_API_KEY` it uses the deterministic fallback.
 4. **Evaluate** — `npm run eval` writes `data/eval.json` with verdict counts, field coverage, dedupe totals and the top 10.
 5. **Report** — `npm run report` writes the static `data/report.html`.
 6. **Decide** — open the UI, use Inspect / Watch / Skip, and keep the reason in the note.
@@ -96,7 +96,7 @@ It runs `health` at the end and does **not** start the UI.
 | `npm run intake -- --title "VW Passat" --url ... --price 6500` | Add a hand-found car through the normal evaluator | No | `listings`, raw listing |
 | `npm run reparse -- --limit 5` | Rebuild AutoScout24 listings from stored pages | No | `listings` |
 | `npm run score -- --top 20` | Print the top N from stored listings | No | Nothing |
-| `npm run analyze` | Threshold analysis for qualifying cards | Only with a DeepSeek key | `listing_analyses`, `data/analysis.json` |
+| `npm run analyze` | Threshold analysis for qualifying cards | Only with a usable LLM config | `listing_analyses`, `data/analysis.json` |
 | `npm run analyze -- --top 10` | Manual override of the threshold selection | Only with a key | Same |
 | `npm run eval` | Metrics, field coverage, top 10 | No | `data/eval.json` |
 | `npm run report` | Static HTML shortlist | No | `data/report.html` |
@@ -316,7 +316,6 @@ npm run fetch:as24
 | `LLM_API_KEY` | unset | Analyze | Unset means deterministic fallback unless the provider is keyless |
 | `LLM_BASE_URL` | provider default | Analyze | OpenAI-compatible base URL or full endpoint |
 | `LLM_MODEL` | provider default | Analyze | Model name |
-| `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | unset | Analyze | Legacy aliases; used when provider is `deepseek` |
 | `LAYA_ENABLED` | `1` | Fetch and analyze | On by default; `0` or `--no-laya` disables |
 | `LAYA_SUBFOLDER` | empty | Laya | Weights subfolder; empty resolves the bundle at the repo root |
 | `LAYA_REVISION` | unset | Laya | Weights revision |
@@ -339,7 +338,7 @@ Page count comes from `--pages`, `FETCH_REFRESH_PAGES`, coverage and `fetch_stat
 | UI shows `409` on Fetch now | A fetch is already running | Wait for `done` in the header |
 | `EADDRINUSE` on start | Port 8124 is taken | `UI_PORT=8125 npm run ui` |
 | Shortlist looks empty after a criteria change | A view filter is still applied | Clear filters; analyses are rebuilt with `npm run analyze` |
-| Analysis says "deterministic fallback" | No DeepSeek key | Set `DEEPSEEK_API_KEY` or accept the fallback |
+| Analysis says "deterministic fallback" | No usable LLM config | Set `LLM_PROVIDER`, `LLM_API_KEY` and optionally `LLM_BASE_URL`/`LLM_MODEL`, or accept the fallback |
 | Old cars keep appearing | The card was not yet checked at the source, or the source still serves a live page | Run `npm run availability`; confirmed 404/410 rows disappear. Use **Show unavailable** to audit them. |
 | `SQLITE_BUSY` or slow writes | Two fetch processes on one database | Run one at a time; the UI enforces it, the CLI does not |
 | `ExperimentalWarning: SQLite is an experimental feature` | Node 24 `node:sqlite` | Expected for the POC; no action |

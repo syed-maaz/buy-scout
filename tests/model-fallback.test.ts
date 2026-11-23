@@ -46,10 +46,10 @@ const evaluation = evaluateCar(brief, listing, new Date("2026-10-31T00:00:00Z"))
 
 test("analysis returns the deterministic fallback on a network error", async () => {
   const originalFetch = globalThis.fetch;
-  const originalKey = process.env.DEEPSEEK_API_KEY;
-  const originalBase = process.env.DEEPSEEK_BASE_URL;
-  process.env.DEEPSEEK_API_KEY = "test-key";
-  process.env.DEEPSEEK_BASE_URL = "http://127.0.0.1:1";
+  const originalKey = process.env.LLM_API_KEY;
+  const originalBase = process.env.LLM_BASE_URL;
+  process.env.LLM_API_KEY = "test-key";
+  process.env.LLM_BASE_URL = "http://127.0.0.1:1";
   globalThis.fetch = (async () => {
     throw new Error("simulated timeout");
   }) as typeof fetch;
@@ -59,20 +59,20 @@ test("analysis returns the deterministic fallback on a network error", async () 
     assert.equal(result.model, "deterministic-fallback");
   } finally {
     globalThis.fetch = originalFetch;
-    if (originalKey === undefined) delete process.env.DEEPSEEK_API_KEY;
-    else process.env.DEEPSEEK_API_KEY = originalKey;
-    if (originalBase === undefined) delete process.env.DEEPSEEK_BASE_URL;
-    else process.env.DEEPSEEK_BASE_URL = originalBase;
+    if (originalKey === undefined) delete process.env.LLM_API_KEY;
+    else process.env.LLM_API_KEY = originalKey;
+    if (originalBase === undefined) delete process.env.LLM_BASE_URL;
+    else process.env.LLM_BASE_URL = originalBase;
   }
 });
 
 test("research rejects an invalid model payload and returns the fallback", async () => {
   const originalFetch = globalThis.fetch;
-  const originalKey = process.env.DEEPSEEK_API_KEY;
-  const originalBase = process.env.DEEPSEEK_BASE_URL;
+  const originalKey = process.env.LLM_API_KEY;
+  const originalBase = process.env.LLM_BASE_URL;
   const originalFirecrawl = process.env.FIRECRAWL_API_KEY;
-  process.env.DEEPSEEK_API_KEY = "test-key";
-  process.env.DEEPSEEK_BASE_URL = "http://model.test";
+  process.env.LLM_API_KEY = "test-key";
+  process.env.LLM_BASE_URL = "http://model.test";
   delete process.env.FIRECRAWL_API_KEY;
   globalThis.fetch = (async () => ({
     ok: true,
@@ -84,10 +84,10 @@ test("research rejects an invalid model payload and returns the fallback", async
     assert.equal(result.researchBasis, "model_knowledge");
   } finally {
     globalThis.fetch = originalFetch;
-    if (originalKey === undefined) delete process.env.DEEPSEEK_API_KEY;
-    else process.env.DEEPSEEK_API_KEY = originalKey;
-    if (originalBase === undefined) delete process.env.DEEPSEEK_BASE_URL;
-    else process.env.DEEPSEEK_BASE_URL = originalBase;
+    if (originalKey === undefined) delete process.env.LLM_API_KEY;
+    else process.env.LLM_API_KEY = originalKey;
+    if (originalBase === undefined) delete process.env.LLM_BASE_URL;
+    else process.env.LLM_BASE_URL = originalBase;
     if (originalFirecrawl === undefined) delete process.env.FIRECRAWL_API_KEY;
     else process.env.FIRECRAWL_API_KEY = originalFirecrawl;
   }

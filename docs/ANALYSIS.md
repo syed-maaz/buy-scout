@@ -79,7 +79,7 @@ Source: `src/intelligence/laya.ts`. The threshold is provisional; the rules stil
 
 ```bash
 npm run laya:classify                    # classify the existing corpus
-npm run analyze -- --top 10              # Laya first, DeepSeek only when escalated
+npm run analyze -- --top 10              # Laya first, LLM only when configured
 npm run analyze -- --no-laya             # disable Laya for one run
 ```
 
@@ -104,7 +104,7 @@ export LLM_MODEL=deepseek-v4.1-flash
 export LLM_API_KEY=sk-...
 ```
 
-`LLM_*` wins over the legacy `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL` names. The legacy names still work when `LLM_PROVIDER=deepseek` or when the provider is omitted. For local Ollama, no key is required. `LLM_ALLOW_NO_KEY=1` permits a custom keyless endpoint.
+`LLM_PROVIDER` selects a preset or `custom`; `LLM_BASE_URL` and `LLM_MODEL` override the preset. For local Ollama, no key is required. `LLM_ALLOW_NO_KEY=1` permits a custom keyless endpoint.
 
 Request shape:
 
@@ -222,7 +222,7 @@ sequenceDiagram
         SEL-->>API: items, considered, reason
         loop each qualifying card (sequential)
             API->>AN: analyzeListing(listing, evaluation)
-            alt DEEPSEEK_API_KEY and DEEPSEEK_BASE_URL set
+            alt LLM_API_KEY and LLM_BASE_URL set
                 AN->>DS: POST /chat/completions (json_object, 30 s)
                 DS-->>AN: summary · contradictions · questions · negotiation · risk_notes
                 Note over AN: Zod parse failure → fallback
@@ -277,7 +277,7 @@ The reliable reset is: **save criteria, then analyze.** That clears everything a
 | Deterministic fallback analysis + German question set | **Live** | None |
 | Storage in `listing_analyses`, UI rendering | **Live** | None |
 | `data/analysis.json` export | **Live** | None |
-| DeepSeek summary/contradictions/negotiation | **Credential-dependent, untested here** | `DEEPSEEK_API_KEY` **and** `DEEPSEEK_BASE_URL`; network |
+| LLM summary/contradictions/negotiation | **Credential-dependent, untested here** | `LLM_API_KEY` (or keyless provider), `LLM_BASE_URL`, `LLM_MODEL`; network |
 | Laya classification | **On by default for CLI runs; no recorded result** | ~1.7 GB weights load on first use; `--no-laya` or `LAYA_ENABLED=0` disables; UI paths skip it |
 | Laya need characterisation | **Adapter only, unwired** | Same, plus a caller |
 | mobile.de listings feeding analysis | **Blocked** | See `docs/WORKAROUNDS.md`; email/Firecrawl path |
@@ -308,8 +308,8 @@ npm run analyze -- --no-laya
 npm run analyze -- --db ./data/buy-scout.db --out ./data/analysis.json
 
 # DeepSeek instead of the fallback
-export DEEPSEEK_API_KEY=sk-...
-export DEEPSEEK_BASE_URL=https://api.deepseek.com
+export LLM_API_KEY=sk-...
+export LLM_BASE_URL=https://api.deepseek.com
 npm run analyze
 
 # Whole chain: fetch → analyze → eval → report

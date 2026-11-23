@@ -42,26 +42,15 @@ function envValue(env: NodeJS.ProcessEnv, name: string): string | null {
 }
 
 /**
- * One OpenAI-compatible chat config for every provider. LLM_* wins; the old
- * DEEPSEEK_* variables remain supported when the provider is deepseek.
+ * One OpenAI-compatible chat config for every provider. The LLM_* variables
+ * are the only configuration surface.
  */
 export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig | null {
   const provider = (envValue(env, "LLM_PROVIDER") ?? "deepseek").toLowerCase();
   const preset = PRESETS[provider] ?? { requiresKey: true };
-  const isDeepSeek = provider === "deepseek";
-  const baseUrl =
-    envValue(env, "LLM_BASE_URL") ??
-    (isDeepSeek ? envValue(env, "DEEPSEEK_BASE_URL") : null) ??
-    preset.baseUrl ??
-    null;
-  const model =
-    envValue(env, "LLM_MODEL") ??
-    (isDeepSeek ? envValue(env, "DEEPSEEK_MODEL") : null) ??
-    preset.model ??
-    null;
-  const apiKey =
-    envValue(env, "LLM_API_KEY") ??
-    (isDeepSeek ? envValue(env, "DEEPSEEK_API_KEY") : null);
+  const baseUrl = envValue(env, "LLM_BASE_URL") ?? preset.baseUrl ?? null;
+  const model = envValue(env, "LLM_MODEL") ?? preset.model ?? null;
+  const apiKey = envValue(env, "LLM_API_KEY");
   const allowNoKey = envValue(env, "LLM_ALLOW_NO_KEY") === "1" || !preset.requiresKey;
 
   if (!baseUrl || !model) return null;
@@ -87,7 +76,7 @@ export function llmStatus(env: NodeJS.ProcessEnv = process.env): {
   return {
     configured: config !== null,
     provider: (envValue(env, "LLM_PROVIDER") ?? "deepseek").toLowerCase(),
-    model: config?.model ?? (envValue(env, "LLM_MODEL") ?? envValue(env, "DEEPSEEK_MODEL")),
+    model: config?.model ?? envValue(env, "LLM_MODEL"),
   };
 }
 

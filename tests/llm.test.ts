@@ -14,15 +14,11 @@ test("reads a generic OpenAI-compatible provider", () => {
   assert.equal(config?.model, "test-model");
 });
 
-test("keeps legacy DeepSeek variables working", () => {
-  const config = readLlmConfig({
-    DEEPSEEK_API_KEY: "test-key",
-    DEEPSEEK_BASE_URL: "https://api.deepseek.com/",
-    DEEPSEEK_MODEL: "deepseek-test",
-  });
-  assert.equal(config?.provider, "deepseek");
-  assert.equal(config?.baseUrl, "https://api.deepseek.com/");
-  assert.equal(config?.model, "deepseek-test");
+test("uses provider defaults when base and model are omitted", () => {
+  const config = readLlmConfig({ LLM_PROVIDER: "openai", LLM_API_KEY: "test-key" });
+  assert.equal(config?.provider, "openai");
+  assert.equal(config?.baseUrl, "https://api.openai.com/v1");
+  assert.equal(config?.model, "gpt-4o-mini");
 });
 
 test("allows a local Ollama endpoint without a key", () => {

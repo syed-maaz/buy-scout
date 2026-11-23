@@ -242,8 +242,8 @@ exactly the card worth asking about.
 Each analysis is a JSON object with `summary`, `contradictions`, `questions`,
 `negotiation` and `risk_notes`. The card shows the summary and the first three questions.
 
-- With `DEEPSEEK_API_KEY` **and** `DEEPSEEK_BASE_URL` set, the call goes to
-  `POST /chat/completions` with `model` from `DEEPSEEK_MODEL` (default
+- With `LLM_API_KEY` **and** `LLM_BASE_URL` set, the call goes to
+  `POST /chat/completions` with `model` from `LLM_MODEL` (default
   `deepseek-v4.1-flash`), a 30 s timeout, temperature 0.2 and JSON-only output.
 - With either variable missing — or on a non-2xx response, timeout, or unparseable body —
   the deterministic fallback (`model: "deterministic-fallback"`) is used. It never invents

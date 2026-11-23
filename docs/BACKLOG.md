@@ -21,7 +21,7 @@ description: buy-scout — Backlog
 
 3. **Live Laya/DeepSeek**
    - Laya: download weights once (`LAYA_ENABLED=1`).
-   - DeepSeek: set `DEEPSEEK_API_KEY`; compare fallback vs model.
+   - DeepSeek: set `LLM_API_KEY`; compare fallback vs model.
    - AC-11, AC-12.
 
 4. **Auto-fallback executor**

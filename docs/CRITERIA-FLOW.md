@@ -109,7 +109,7 @@ npm run analyze
 - Reads the active criteria.
 - Selects every card that clears **score + confidence**, not an arbitrary top N.
 - `maxCards` is only a safety cap; it does not change the threshold.
-- Calls DeepSeek if `DEEPSEEK_API_KEY` is set; otherwise uses the deterministic German fallback.
+- Calls DeepSeek if `LLM_API_KEY` is set; otherwise uses the deterministic German fallback.
 - Stores the analysis keyed by listing.
 - The UI shows summary + questions on the card.
 - The criteria panel exposes **Analysis min score**, **Analysis min confidence**, and **Analysis max cards**.

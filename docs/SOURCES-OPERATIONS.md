@@ -561,7 +561,7 @@ The refresh window is a minimum of five pages, so a short refresh does not stop 
 3. **Kleinanzeigen is wired.** Direct search and detail work; it is enabled in the source registry.
 4. **`mobile_de` and `autouncle` are disabled.** They remain visible in health but are not fetched.
 5. **Laya is enabled by default.** It loads local weights and is advisory; `--no-laya` or `LAYA_ENABLED=0` disables it.
-6. **No `DEEPSEEK_API_KEY`.** Analysis runs on the deterministic German fallback. Quality is lower, but the pipeline is intact.
+6. **No `LLM_API_KEY`.** Analysis runs on the deterministic German fallback. Quality is lower, but the pipeline is intact.
 7. **No human labels yet.** Precision@10 needs 50 labelled listings; the harness exists.
 8. **Availability is evidence-based.** Source-confirmed 404/410/gone pages are retired from the default list. Unprobed stale cards remain until `npm run availability` checks them; absence from a partial sweep is not treated as proof.
 9. **Coverage is AutoScout24-only**, and it is a price-band ledger over newest-first pages, not an exhaustive sweep. AutoUncle and mobile.de need their own model.

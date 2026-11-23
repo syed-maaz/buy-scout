@@ -269,7 +269,7 @@ selected   = eligible sorted by score, capped at maxCards (default 30, range 1â€
 
 Analysis reads the newest 500 listings by `last_seen_at`; the UI reads up to 1,000. A single-listing lookup uses the database key `(source, external_id)` rather than loading the whole working set. `npm run analyze -- --top N` bypasses the threshold as a manual override.
 
-`analyzeListing()` calls DeepSeek only when both `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` are set. It sends the normalised listing and the rule result, requests JSON, validates it with zod, and times out after 30 seconds. Missing configuration, a non-2xx response, a timeout, a network error, or a schema failure returns the deterministic German fallback (`model: "deterministic-fallback"`), which still produces a summary, questions, negotiation points, and red flags. DeepSeek never writes listing fields.
+`analyzeListing()` calls the configured OpenAI-compatible LLM only when `readLlmConfig()` succeeds. It sends the normalised listing and the rule result, requests JSON, validates it with zod, and times out after 30 seconds. Missing configuration, a non-2xx response, a timeout, a network error, or a schema failure returns the deterministic German fallback (`model: "deterministic-fallback"`), which still produces a summary, questions, negotiation points, and red flags. The LLM never writes listing fields.
 
 Laya is enabled by default for CLI `fetch`, `analyze`, `daily` and `laya:classify`; `--no-laya` disables it for a run and `LAYA_ENABLED=0` disables it globally. It loads local weights on first use and classifies four questions: family fit, risk, recommended action, and deal. It defers to DeepSeek when the mean confidence is below 0.45 or the action confidence is below 0.30. It is advisory, not a veto, and a confident Laya answer does not suppress the DeepSeek explanation. The UI's **Fetch now** runs `fetch:report` with `--no-laya`, and `POST /api/analyze` does not invoke Laya.
 
@@ -378,7 +378,7 @@ flowchart TD
   CAP -- no --> KEEP["Keep every qualifying card"]
   CUT --> AN["analyzeListing()"]
   KEEP --> AN
-  AN --> DS{"DEEPSEEK_API_KEY and<br/>DEEPSEEK_BASE_URL set?"}
+  AN --> DS{"LLM config valid?"}
   DS -- yes --> LLM["DeepSeek JSON analysis<br/>zod validated Â· 30 s timeout"]
   DS -- no --> FB["Deterministic German fallback"]
   LLM --> OUT["listing_analyses<br/>one current row per listing"]
@@ -515,7 +515,7 @@ Blocked does not mean hidden. `npm run health` lists every source with its statu
 
 | Dependency | Needed for | Current state |
 |---|---|---|
-| `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` | Live model analysis | Absent; the deterministic fallback is used |
+| `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | Live model analysis | No key; the deterministic fallback is used |
 | Laya weights, about 1.7 GB | Classification | On by default for CLI fetch/analyze/daily; weights load on first use; disable with `--no-laya` or `LAYA_ENABLED=0` |
 | Firecrawl key | Web research and hosted unblocking | Not configured; research uses the model-knowledge fallback |
 | 50 human labels | precision@10 | Harness exists; labels not collected |

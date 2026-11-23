@@ -91,13 +91,13 @@ prose and questions with no API keys configured.
 ## Side Effects
 
 - Outbound HTTPS to the DeepSeek chat-completions endpoint
-  (`${DEEPSEEK_BASE_URL}/chat/completions`) with 30 s (analysis) and 60 s (research)
+  (`${LLM_BASE_URL}/chat/completions`) with 30 s (analysis) and 60 s (research)
   timeouts (`analyst.ts:94`, `research.ts:311`).
 - Outbound HTTPS to `https://api.firecrawl.dev/v1/search` when `FIRECRAWL_API_KEY` is set,
   with a 25 s timeout (`research.ts:255`).
 - Dynamic `import("@receptron/laya")` plus `Laya.load` with optional model download and
   cache directory (`LAYA_SUBFOLDER`, `LAYA_REVISION`, `LAYA_CACHE`) (`laya.ts:14`–`laya.ts:19`).
-- Reads environment: `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL`,
+- Reads environment: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`,
   `FIRECRAWL_API_KEY`, `LAYA_ENABLED`, `LAYA_SUBFOLDER`, `LAYA_REVISION`, `LAYA_CACHE`
   (`analyst.ts:71`, `analyst.ts:101`, `research.ts:252`, `laya.ts:8`).
 - Database reads and writes: `savedPreferenceSuggestions` joins `saved_listings` to
