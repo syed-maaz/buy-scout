@@ -312,10 +312,10 @@ npm run fetch:as24
 | `AVAILABILITY_LIMIT` | `100` | `npm run availability` | Default sweep size |
 | `AVAILABILITY_DELAY_MS` | `2000` | `npm run availability` | Spacing between detail checks |
 | `UI_PORT` | `8124` | UI | Local port, bound to 127.0.0.1 |
-| `LLM_PROVIDER` | `deepseek` | Analyze | `deepseek`, `openai`, `openrouter`, `ollama` or `custom` |
-| `LLM_API_KEY` | unset | Analyze | Unset means deterministic fallback unless the provider is keyless |
-| `LLM_BASE_URL` | provider default | Analyze | OpenAI-compatible base URL or full endpoint |
-| `LLM_MODEL` | provider default | Analyze | Model name |
+| `LLM_BASE_URL` | unset | Analyze | One OpenAI-compatible base URL or full endpoint |
+| `LLM_MODEL` | unset | Analyze | Model name for that endpoint |
+| `LLM_API_KEY` | unset | Analyze | Unset means fallback unless `LLM_ALLOW_NO_KEY=1` |
+| `LLM_ALLOW_NO_KEY` | `0` | Analyze | `1` permits a keyless local endpoint |
 | `LAYA_ENABLED` | `1` | Fetch and analyze | On by default; `0` or `--no-laya` disables |
 | `LAYA_SUBFOLDER` | empty | Laya | Weights subfolder; empty resolves the bundle at the repo root |
 | `LAYA_REVISION` | unset | Laya | Weights revision |
@@ -338,7 +338,7 @@ Page count comes from `--pages`, `FETCH_REFRESH_PAGES`, coverage and `fetch_stat
 | UI shows `409` on Fetch now | A fetch is already running | Wait for `done` in the header |
 | `EADDRINUSE` on start | Port 8124 is taken | `UI_PORT=8125 npm run ui` |
 | Shortlist looks empty after a criteria change | A view filter is still applied | Clear filters; analyses are rebuilt with `npm run analyze` |
-| Analysis says "deterministic fallback" | No usable LLM config | Set `LLM_PROVIDER`, `LLM_API_KEY` and optionally `LLM_BASE_URL`/`LLM_MODEL`, or accept the fallback |
+| Analysis says "deterministic fallback" | No usable LLM config | Set `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY`, or accept the fallback |
 | Old cars keep appearing | The card was not yet checked at the source, or the source still serves a live page | Run `npm run availability`; confirmed 404/410 rows disappear. Use **Show unavailable** to audit them. |
 | `SQLITE_BUSY` or slow writes | Two fetch processes on one database | Run one at a time; the UI enforces it, the CLI does not |
 | `ExperimentalWarning: SQLite is an experimental feature` | Node 24 `node:sqlite` | Expected for the POC; no action |

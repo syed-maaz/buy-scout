@@ -515,7 +515,7 @@ Blocked does not mean hidden. `npm run health` lists every source with its statu
 
 | Dependency | Needed for | Current state |
 |---|---|---|
-| `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | Live model analysis | No key; the deterministic fallback is used |
+| `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` | Live model analysis | No key; the deterministic fallback is used |
 | Laya weights, about 1.7 GB | Classification | On by default for CLI fetch/analyze/daily; weights load on first use; disable with `--no-laya` or `LAYA_ENABLED=0` |
 | Firecrawl key | Web research and hosted unblocking | Not configured; research uses the model-knowledge fallback |
 | 50 human labels | precision@10 | Harness exists; labels not collected |

@@ -1147,8 +1147,8 @@ function renderDetail(data) {
     : '<p class="pref-note">No Laya classification stored. Run a fetch or <code>npm run laya:classify</code>.</p>';
   const analysisLabel = analysis?.analysis?.source === 'fallback'
     ? 'Analysis (deterministic fallback)'
-    : analysis?.analysis?.provider
-      ? `Analysis (${analysis.analysis.provider} · ${analysis.analysis.model ?? 'model'})`
+    : analysis?.analysis?.model
+      ? `Analysis (${analysis.analysis.model})`
       : 'Analysis';
   const analysisBlock = analysis?.analysis
     ? `<div class="analysis"><b>${esc(analysisLabel)}:</b> ${esc(analysis.analysis.summary)}${analysis.analysis.questions?.length ? `<br><b>Ask:</b> ${esc(analysis.analysis.questions.slice(0, 5).join(' | '))}` : ''}</div>`

@@ -81,6 +81,6 @@ writeFileSync(out, JSON.stringify({ generatedAt: new Date().toISOString(), items
 console.log(`\nWrote ${out}`);
 const llm = llmStatus();
 console.log(
-  `LLM: ${llm.configured ? `${llm.provider} (${llm.model ?? "model"})` : "not configured — deterministic fallback"}; ` +
+  `LLM: ${llm.configured ? `configured (${llm.model ?? "model"})` : "not configured — deterministic fallback"}; ` +
     `Laya: ${useLaya ? "enabled" : "disabled"}`,
 );

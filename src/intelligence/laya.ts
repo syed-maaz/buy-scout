@@ -19,7 +19,13 @@ export async function getLaya(): Promise<import("@receptron/laya").Laya> {
       });
     })();
   }
-  return instance;
+  try {
+    return await instance;
+  } catch (error) {
+    // A transient model-load failure must not poison every later call.
+    instance = null;
+    throw error;
+  }
 }
 
 export interface LayaClassification {

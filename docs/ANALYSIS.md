@@ -98,20 +98,19 @@ A second entry point, `characteriseNeedWithLaya(brief)`, profiles the *need* (fr
 `analyzeListing(listing, evaluation)` calls an OpenAI-compatible chat endpoint. The generic configuration is:
 
 ```bash
-export LLM_PROVIDER=deepseek        # deepseek | openai | openrouter | ollama | custom
 export LLM_BASE_URL=https://api.deepseek.com
 export LLM_MODEL=deepseek-v4.1-flash
 export LLM_API_KEY=sk-...
 ```
 
-`LLM_PROVIDER` selects a preset or `custom`; `LLM_BASE_URL` and `LLM_MODEL` override the preset. For local Ollama, no key is required. `LLM_ALLOW_NO_KEY=1` permits a custom keyless endpoint.
+There is exactly one endpoint configuration. Change the base URL and model for another provider. For a keyless local endpoint, set `LLM_ALLOW_NO_KEY=1`; for example Ollama at `http://127.0.0.1:11434/v1` with `llama3.1`.
 
 Request shape:
 
 | Setting | Value |
 |---|---|
 | Endpoint | `POST {LLM_BASE_URL}/chat/completions` (or the full endpoint) |
-| Model | `LLM_MODEL` or the provider default |
+| Model | `LLM_MODEL` (required) |
 | Temperature | `0.2` |
 | Response format | `{ type: "json_object" }` |
 | Timeout | `30_000` ms via `AbortSignal.timeout` |

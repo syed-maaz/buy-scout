@@ -49,10 +49,9 @@ rules own every veto.
 Current state is generated, not copied: run `npm run health`, `npm run eval`, and
 `npm test`. The active criteria are v18 (€7,000 car cap + €800 reserve, 200 km).
 
-Laya runs locally. The analysis provider is optional and OpenAI-compatible:
-`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY` select DeepSeek, OpenAI,
-OpenRouter, Ollama or a custom endpoint. Without a usable provider the analysis path
-returns the deterministic German fallback and labels it as such. `.env` is loaded at
+Laya runs locally. The LLM is optional and OpenAI-compatible. Set one endpoint with
+`LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY`; there is no provider switch. Without a
+usable endpoint the analysis path returns the deterministic German fallback. `.env` is loaded at
 startup for the UI and the main CLIs; shell exports take precedence.
 
 > The `sources` table is the switch. Only enabled adapters are constructed. Direct

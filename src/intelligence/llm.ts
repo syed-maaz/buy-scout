@@ -1,5 +1,5 @@
 export interface LlmConfig {
-  provider: string;
+  provider: "llm";
   baseUrl: string;
   model: string;
   apiKey: string | null;
@@ -7,58 +7,26 @@ export interface LlmConfig {
   jsonMode: boolean;
 }
 
-interface ProviderPreset {
-  baseUrl?: string;
-  model?: string;
-  requiresKey: boolean;
-}
-
-const PRESETS: Record<string, ProviderPreset> = {
-  deepseek: {
-    baseUrl: "https://api.deepseek.com",
-    model: "deepseek-v4.1-flash",
-    requiresKey: true,
-  },
-  openai: {
-    baseUrl: "https://api.openai.com/v1",
-    model: "gpt-4o-mini",
-    requiresKey: true,
-  },
-  openrouter: {
-    baseUrl: "https://openrouter.ai/api/v1",
-    model: "openai/gpt-4o-mini",
-    requiresKey: true,
-  },
-  ollama: {
-    baseUrl: "http://127.0.0.1:11434/v1",
-    model: "llama3.1",
-    requiresKey: false,
-  },
-};
-
 function envValue(env: NodeJS.ProcessEnv, name: string): string | null {
   const value = env[name]?.trim();
   return value ? value : null;
 }
 
 /**
- * One OpenAI-compatible chat config for every provider. The LLM_* variables
- * are the only configuration surface.
+ * One OpenAI-compatible provider per deployment. Change the base URL and model
+ * for DeepSeek, OpenAI, OpenRouter, Ollama or a custom endpoint; there is no
+ * provider switch and no fallback to another provider.
  */
 export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig | null {
-  const provider = (envValue(env, "LLM_PROVIDER") ?? "deepseek").toLowerCase();
-  const preset = PRESETS[provider] ?? { requiresKey: true };
-  const baseUrl = envValue(env, "LLM_BASE_URL") ?? preset.baseUrl ?? null;
-  const model = envValue(env, "LLM_MODEL") ?? preset.model ?? null;
+  const baseUrl = envValue(env, "LLM_BASE_URL");
+  const model = envValue(env, "LLM_MODEL");
   const apiKey = envValue(env, "LLM_API_KEY");
-  const allowNoKey = envValue(env, "LLM_ALLOW_NO_KEY") === "1" || !preset.requiresKey;
-
   if (!baseUrl || !model) return null;
-  if (!apiKey && !allowNoKey) return null;
+  if (!apiKey && envValue(env, "LLM_ALLOW_NO_KEY") !== "1") return null;
 
   const timeout = Number(envValue(env, "LLM_TIMEOUT_MS") ?? "30000");
   return {
-    provider,
+    provider: "llm",
     baseUrl,
     model,
     apiKey,
@@ -69,13 +37,11 @@ export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig |
 
 export function llmStatus(env: NodeJS.ProcessEnv = process.env): {
   configured: boolean;
-  provider: string;
   model: string | null;
 } {
   const config = readLlmConfig(env);
   return {
     configured: config !== null,
-    provider: (envValue(env, "LLM_PROVIDER") ?? "deepseek").toLowerCase(),
     model: config?.model ?? envValue(env, "LLM_MODEL"),
   };
 }
@@ -94,12 +60,12 @@ function stripFence(content: string): string {
 export interface LlmJsonResult {
   data: unknown;
   model: string;
-  provider: string;
+  provider: "llm";
 }
 
 /**
- * Call an OpenAI-compatible chat endpoint and parse one JSON object. Returns
- * null on any transport, HTTP, shape or JSON failure so callers can fall back.
+ * Call the configured OpenAI-compatible chat endpoint and parse one JSON
+ * object. Returns null on any transport, HTTP, shape or JSON failure.
  */
 export async function callLlmJson(args: {
   system: string;
@@ -137,7 +103,7 @@ export async function callLlmJson(args: {
     return {
       data: JSON.parse(stripFence(content)) as unknown,
       model: payload.model ?? config.model,
-      provider: config.provider,
+      provider: "llm",
     };
   } catch {
     return null;
