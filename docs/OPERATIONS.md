@@ -316,6 +316,9 @@ npm run fetch:as24
 | `LLM_MODEL` | unset | Analyze | Model name for that endpoint |
 | `LLM_API_KEY` | unset | Analyze | Unset means fallback unless `LLM_ALLOW_NO_KEY=1` |
 | `LLM_ALLOW_NO_KEY` | `0` | Analyze | `1` permits a keyless local endpoint |
+| `LLM_TIMEOUT_MS` | `30000` | Analyze | Per-request timeout |
+| `LLM_REASONING_EFFORT` | unset | Analyze | Sent only when set; `none` avoids slow thinking on local models |
+| `LLM_EXTRA_HEADERS` | unset | Analyze | JSON object of extra request headers |
 | `LAYA_ENABLED` | `1` | Fetch and analyze | On by default; `0` or `--no-laya` disables |
 | `LAYA_SUBFOLDER` | empty | Laya | Weights subfolder; empty resolves the bundle at the repo root |
 | `LAYA_REVISION` | unset | Laya | Weights revision |

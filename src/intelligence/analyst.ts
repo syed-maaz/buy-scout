@@ -69,13 +69,47 @@ export async function analyzeListing(
   const config = readLlmConfig();
   if (!config) return fallbackAnalysis(listing, evaluation);
 
+  const compactListing = {
+    title: listing.title,
+    make: listing.make,
+    model: listing.model,
+    variant: listing.variant,
+    year: listing.firstRegistration,
+    priceEur: listing.priceEur,
+    mileageKm: listing.mileageKm,
+    fuel: listing.fuel,
+    transmission: listing.transmission,
+    bodyType: listing.bodyType,
+    seats: listing.seats,
+    doors: listing.doors,
+    hasIsofix: listing.hasIsofix,
+    huDue: listing.huDue,
+    sellerType: listing.sellerType,
+    city: listing.city,
+    distanceKm: listing.distanceKm,
+    priceLabel: listing.priceLabel,
+    priceMedianEur: listing.priceMedianEur,
+    damaged: listing.damaged,
+    redFlags: listing.redFlags,
+    equipment: listing.equipment.slice(0, 30),
+    description: listing.description?.slice(0, 1200) ?? null,
+  };
+  const compactEvaluation = {
+    verdict: evaluation.verdict,
+    hardPass: evaluation.hardPass,
+    score: evaluation.score,
+    confidence: evaluation.confidence,
+    reasons: evaluation.reasons,
+    hardFailures: evaluation.hardFailures,
+    unknowns: evaluation.unknowns,
+  };
   const prompt = `Du bist ein deutscher Gebrauchtwagen-Analyst. Analysiere nur die gelieferten Daten; erfinde keine Historie, keinen VIN und keine Unfallfreiheit.
 
 Listing:
-${JSON.stringify(listing, null, 2)}
+${JSON.stringify(compactListing)}
 
 Regel-Ergebnis:
-${JSON.stringify(evaluation, null, 2)}
+${JSON.stringify(compactEvaluation)}
 
 Antworte ausschließlich als JSON:
 {

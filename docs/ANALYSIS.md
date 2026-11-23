@@ -105,6 +105,17 @@ export LLM_API_KEY=sk-...
 
 There is exactly one endpoint configuration. Change the base URL and model for another provider. For a keyless local endpoint, set `LLM_ALLOW_NO_KEY=1`; for example Ollama at `http://127.0.0.1:11434/v1` with `llama3.1`.
 
+Optional provider controls:
+
+```bash
+export LLM_TIMEOUT_MS=120000       # default 30000; useful for local models
+export LLM_REASONING_EFFORT=none   # sent only when set
+export LLM_JSON_MODE=1             # default; use 0 if the endpoint rejects response_format
+export LLM_EXTRA_HEADERS='{"x-opencode-session":"..."}'
+```
+
+`LLM_EXTRA_HEADERS` is a JSON object. It is merged into the request headers and is useful for gateways such as OpenCode Go that require a session header in addition to the bearer token.
+
 Request shape:
 
 | Setting | Value |

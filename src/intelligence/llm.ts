@@ -5,6 +5,8 @@ export interface LlmConfig {
   apiKey: string | null;
   timeoutMs: number;
   jsonMode: boolean;
+  reasoningEffort: string | null;
+  extraHeaders: Record<string, string>;
 }
 
 function envValue(env: NodeJS.ProcessEnv, name: string): string | null {
@@ -25,6 +27,20 @@ export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig |
   if (!apiKey && envValue(env, "LLM_ALLOW_NO_KEY") !== "1") return null;
 
   const timeout = Number(envValue(env, "LLM_TIMEOUT_MS") ?? "30000");
+  let extraHeaders: Record<string, string> = {};
+  try {
+    const parsed = JSON.parse(envValue(env, "LLM_EXTRA_HEADERS") ?? "{}") as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      extraHeaders = Object.fromEntries(
+        Object.entries(parsed as Record<string, unknown>)
+          .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+          .map(([key, value]) => [key.toLowerCase(), value]),
+      );
+    }
+  } catch {
+    // Invalid optional headers must not prevent the provider from working.
+  }
+
   return {
     provider: "llm",
     baseUrl,
@@ -32,6 +48,8 @@ export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig |
     apiKey,
     timeoutMs: Number.isFinite(timeout) && timeout > 0 ? timeout : 30_000,
     jsonMode: envValue(env, "LLM_JSON_MODE") !== "0",
+    reasoningEffort: envValue(env, "LLM_REASONING_EFFORT"),
+    extraHeaders,
   };
 }
 
@@ -75,7 +93,10 @@ export async function callLlmJson(args: {
   const config = readLlmConfig();
   if (!config) return null;
 
-  const headers: Record<string, string> = { "content-type": "application/json" };
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    ...config.extraHeaders,
+  };
   if (config.apiKey) headers.authorization = `Bearer ${config.apiKey}`;
 
   try {
@@ -90,6 +111,7 @@ export async function callLlmJson(args: {
         ],
         temperature: 0.2,
         ...(config.jsonMode ? { response_format: { type: "json_object" } } : {}),
+        ...(config.reasoningEffort ? { reasoning_effort: config.reasoningEffort } : {}),
       }),
       signal: AbortSignal.timeout(args.timeoutMs),
     });
