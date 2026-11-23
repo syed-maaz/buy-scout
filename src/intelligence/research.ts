@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { NormalisedListing } from "../core/types.js";
 import type { CarEvaluation } from "../domain/cars/evaluate.js";
-import { callLlmJson, readLlmConfig } from "./llm.js";
+import { callLlmJson, languageName, readLlmConfig } from "./llm.js";
 
 export interface ResearchSource {
   title: string;
@@ -323,7 +323,8 @@ export async function researchListing(
     hardFailures: evaluation.hardFailures,
     unknowns: evaluation.unknowns,
   };
-  const prompt = `Du bist ein deutscher Gebrauchtwagen-Analyst. Erstelle eine vorsichtige, prüfbare Analyse für dieses Fahrzeug. Erfinde keine VIN, keine Historie und keine Reparaturbelege.
+  const language = languageName(config);
+  const prompt = `You are a used-car analyst. Create a cautious, verifiable brief for this car. Do not invent a VIN, history or repair receipts. Answer every prose field in ${language}.
 
 Fahrzeug:
 ${JSON.stringify(compactListing)}
@@ -334,7 +335,7 @@ ${JSON.stringify(compactEvaluation)}
 Web-Suchergebnisse (nur als Hinweise, nicht als Wahrheit):
 ${JSON.stringify(web)}
 
-Antworte ausschließlich als JSON:
+Return only JSON, with all prose in ${language}:
 {
   "summary": "string",
   "goodPoints": ["string"],
@@ -350,7 +351,7 @@ Antworte ausschließlich als JSON:
 Regeln: Keine erfundenen Quellen. Wenn du etwas nicht weißt, schreibe "unbekannt" oder lasse das Feld leer. Quellen nur aus den Web-Suchergebnissen übernehmen.`;
 
   const result = await callLlmJson({
-    system: "Du antwortest nur mit validem JSON. Keine Halluzinationen.",
+    system: `Answer in ${language}. Return only valid JSON. Do not hallucinate.`,
     user: prompt,
     timeoutMs: 120_000,
   });

@@ -319,6 +319,7 @@ npm run fetch:as24
 | `LLM_TIMEOUT_MS` | `30000` | Analyze | Per-request timeout |
 | `LLM_REASONING_EFFORT` | unset | Analyze | Sent only when set; `none` avoids slow thinking on local models |
 | `LLM_EXTRA_HEADERS` | unset | Analyze | JSON object of extra request headers |
+| `LLM_LANGUAGE` | `en` | Analyze | Generated prose language: `en` or `de` |
 | `LAYA_ENABLED` | `1` | Fetch and analyze | On by default; `0` or `--no-laya` disables |
 | `LAYA_SUBFOLDER` | empty | Laya | Weights subfolder; empty resolves the bundle at the repo root |
 | `LAYA_REVISION` | unset | Laya | Weights revision |

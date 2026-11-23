@@ -7,6 +7,7 @@ export interface LlmConfig {
   jsonMode: boolean;
   reasoningEffort: string | null;
   extraHeaders: Record<string, string>;
+  language: "en" | "de";
 }
 
 function envValue(env: NodeJS.ProcessEnv, name: string): string | null {
@@ -50,7 +51,12 @@ export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig |
     jsonMode: envValue(env, "LLM_JSON_MODE") !== "0",
     reasoningEffort: envValue(env, "LLM_REASONING_EFFORT"),
     extraHeaders,
+    language: envValue(env, "LLM_LANGUAGE")?.toLowerCase() === "de" ? "de" : "en",
   };
+}
+
+export function languageName(config: LlmConfig): "English" | "German" {
+  return config.language === "de" ? "German" : "English";
 }
 
 export function llmStatus(env: NodeJS.ProcessEnv = process.env): {

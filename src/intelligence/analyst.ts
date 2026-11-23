@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { NormalisedListing } from "../core/types.js";
 import type { CarEvaluation } from "../domain/cars/evaluate.js";
-import { callLlmJson, readLlmConfig } from "./llm.js";
+import { callLlmJson, languageName, readLlmConfig } from "./llm.js";
 
 const AnalysisSchema = z.object({
   summary: z.string(),
@@ -20,17 +20,17 @@ export type ListingAnalysis = z.infer<typeof AnalysisSchema> & {
 
 function fallbackQuestions(listing: NormalisedListing, evaluation: CarEvaluation): string[] {
   const questions: string[] = [];
-  if (listing.hasIsofix === null) questions.push("Ist ISOFIX vorhanden? Bitte Ausstattungsliste/Fotos senden.");
-  if (listing.seats === null) questions.push("Wie viele Sitzplätze hat das Fahrzeug?");
-  if (listing.doors === null) questions.push("Ist es ein 5-Türer?");
-  if (!listing.huDue) questions.push("Wann ist die nächste HU/AU fällig? Bitte HU-Bericht senden.");
+  if (listing.hasIsofix === null) questions.push("Is ISOFIX present? Please send the equipment list or photos.");
+  if (listing.seats === null) questions.push("How many seats does the car have?");
+  if (listing.doors === null) questions.push("Is it a five-door?");
+  if (!listing.huDue) questions.push("When is the next HU/AU due? Please send the inspection report.");
   if (!listing.description?.match(/scheckheft|service|wartung/i)) {
-    questions.push("Ist das Fahrzeug scheckheftgepflegt? Bitte Servicehistorie senden.");
+    questions.push("Does it have a full service history? Please send the service records.");
   }
-  questions.push("Ist das Fahrzeug unfallfrei? Bitte VIN und HU-Bericht senden.");
-  questions.push("Wie viele Vorbesitzer gibt es, und warum wird das Auto verkauft?");
+  questions.push("Is the car accident-free? Please send the VIN and HU report.");
+  questions.push("How many previous owners are there, and why is the car being sold?");
   if (evaluation.unknowns.length > 0) {
-    questions.push(`Bitte bestätigen: ${evaluation.unknowns.join(", ")}.`);
+    questions.push(`Please confirm: ${evaluation.unknowns.join(", ")}.`);
   }
   return [...new Set(questions)].slice(0, 8);
 }
@@ -50,9 +50,9 @@ export function fallbackAnalysis(
     contradictions,
     questions: fallbackQuestions(listing, evaluation),
     negotiation: [
-      "Angebot nur unter Vorbehalt der Besichtigung und HU-Prüfung.",
-      "Bei fehlender Servicehistorie oder Mängeln Preisnachlass verhandeln.",
-      "Keine Anzahlung vor Besichtigung und VIN-Abgleich.",
+      "Make an offer subject to inspection and a valid HU report.",
+      "Negotiate a discount for missing service history or defects.",
+      "Do not pay a deposit before inspection and VIN verification.",
     ],
     risk_notes: listing.redFlags,
     source: "fallback",
@@ -103,7 +103,8 @@ export async function analyzeListing(
     hardFailures: evaluation.hardFailures,
     unknowns: evaluation.unknowns,
   };
-  const prompt = `Du bist ein deutscher Gebrauchtwagen-Analyst. Analysiere nur die gelieferten Daten; erfinde keine Historie, keinen VIN und keine Unfallfreiheit.
+  const language = languageName(config);
+  const prompt = `You are a used-car analyst. Analyse only the supplied data; do not invent history, a VIN or accident freedom. Answer every prose field in ${language}.
 
 Listing:
 ${JSON.stringify(compactListing)}
@@ -111,7 +112,7 @@ ${JSON.stringify(compactListing)}
 Regel-Ergebnis:
 ${JSON.stringify(compactEvaluation)}
 
-Antworte ausschließlich als JSON:
+Return only JSON, with all prose in ${language}:
 {
   "summary": "string",
   "contradictions": ["string"],
@@ -121,7 +122,7 @@ Antworte ausschließlich als JSON:
 }`;
 
   const result = await callLlmJson({
-    system: "Du antwortest nur mit validem JSON. Keine Halluzinationen.",
+    system: `Answer in ${language}. Return only valid JSON. Do not hallucinate.`,
     user: prompt,
     timeoutMs: config.timeoutMs,
   });

@@ -51,7 +51,8 @@ Current state is generated, not copied: run `npm run health`, `npm run eval`, an
 
 Laya runs locally. The LLM is optional and OpenAI-compatible. Set one endpoint with
 `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY`; there is no provider switch. Without a
-usable endpoint the analysis path returns the deterministic German fallback. `.env` is loaded at
+usable endpoint the analysis path returns the deterministic fallback. `LLM_LANGUAGE=en`
+keeps generated analysis and research in English; the default is English. `.env` is loaded at
 startup for the UI and the main CLIs; shell exports take precedence.
 
 > The `sources` table is the switch. Only enabled adapters are constructed. Direct
