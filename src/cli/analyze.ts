@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { getActiveCriteria, latestListings, openDb, upsertLayaClassification, upsertListingAnalysis } from "../db/index.js";
 import { evaluateCar } from "../domain/cars/evaluate.js";
 import { analyzeListing } from "../intelligence/analyst.js";
+import { llmStatus } from "../intelligence/llm.js";
 import { selectAnalysisCandidates } from "../intelligence/selection.js";
 import { classifyListingWithLaya, layaEnabled } from "../intelligence/laya.js";
 
@@ -78,7 +79,8 @@ console.log(`Criteria v${version}`);
 console.log(selection ? selection.reason : `Explicit --top ${top}`);
 writeFileSync(out, JSON.stringify({ generatedAt: new Date().toISOString(), items: output }, null, 2), "utf8");
 console.log(`\nWrote ${out}`);
+const llm = llmStatus();
 console.log(
-  `DeepSeek: ${process.env.DEEPSEEK_API_KEY ? "key present" : "no key — deterministic fallback"}; ` +
-    `Laya: ${useLaya ? "enabled" : "disabled (use --laya + LAYA_ENABLED=1)"}`,
+  `LLM: ${llm.configured ? `${llm.provider} (${llm.model ?? "model"})` : "not configured — deterministic fallback"}; ` +
+    `Laya: ${useLaya ? "enabled" : "disabled"}`,
 );

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { NormalisedListing } from "../core/types.js";
 import type { CarEvaluation } from "../domain/cars/evaluate.js";
+import { callLlmJson, readLlmConfig } from "./llm.js";
 
 export interface ResearchSource {
   title: string;
@@ -47,7 +48,8 @@ export interface ListingResearch {
   negotiation: string[];
   recalls: string[];
   sources: ResearchSource[];
-  researchBasis: "web+model" | "model_knowledge" | "rules_only";
+  researchBasis: "web+model" | "web+rules" | "model_knowledge" | "rules_only";
+  provider: string;
   model: string;
   generatedAt: string;
 }
@@ -243,6 +245,7 @@ function fallbackResearch(listing: NormalisedListing, evaluation: CarEvaluation)
     recalls: [],
     sources: /(passat|polo|golf|volkswagen|\bvw\b)/.test(carText(listing)) ? VW_SOURCES : [],
     researchBasis: "model_knowledge",
+    provider: "none",
     model: "deterministic-variant-kb",
     generatedAt: new Date().toISOString(),
   };
@@ -274,12 +277,17 @@ export async function researchListing(
   evaluation: CarEvaluation,
 ): Promise<ListingResearch> {
   const fallback = fallbackResearch(listing, evaluation);
-  const key = process.env.DEEPSEEK_API_KEY;
-  const base = process.env.DEEPSEEK_BASE_URL?.replace(/\/$/, "");
   const web = await firecrawlSearch(
     `${listing.make ?? ""} ${listing.model ?? ""} ${listing.variant ?? ""} common problems buying guide inspection`,
   );
-  if (!key || !base) return { ...fallback, sources: web.length ? web : fallback.sources, researchBasis: web.length ? "web+model" : "model_knowledge" };
+  const config = readLlmConfig();
+  if (!config) {
+    return {
+      ...fallback,
+      sources: web.length ? web : fallback.sources,
+      researchBasis: web.length ? "web+rules" : "model_knowledge",
+    };
+  }
 
   const prompt = `Du bist ein deutscher Gebrauchtwagen-Analyst. Erstelle eine vorsichtige, prüfbare Analyse für dieses Fahrzeug. Erfinde keine VIN, keine Historie und keine Reparaturbelege.
 
@@ -307,38 +315,30 @@ Antworte ausschließlich als JSON:
 
 Regeln: Keine erfundenen Quellen. Wenn du etwas nicht weißt, schreibe "unbekannt" oder lasse das Feld leer. Quellen nur aus den Web-Suchergebnissen übernehmen.`;
 
-  try {
-    const response = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL ?? "deepseek-v4.1-flash",
-        messages: [
-          { role: "system", content: "Du antwortest nur mit validem JSON. Keine Halluzinationen." },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-      }),
-      signal: AbortSignal.timeout(60_000),
-    });
-    if (!response.ok) return fallback;
-    const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }>; model?: string };
-    const content = payload.choices?.[0]?.message?.content;
-    if (!content) return fallback;
-    const validated = ResearchPayloadSchema.safeParse(JSON.parse(content));
-    if (!validated.success) return fallback;
-    const parsed = validated.data;
+  const result = await callLlmJson({
+    system: "Du antwortest nur mit validem JSON. Keine Halluzinationen.",
+    user: prompt,
+    timeoutMs: 60_000,
+  });
+  if (!result) {
     return {
       ...fallback,
-      ...parsed,
-      commonProblems: parsed.commonProblems.length ? parsed.commonProblems : fallback.commonProblems,
-      sources: web.length ? web : parsed.sources.length ? parsed.sources : fallback.sources,
-      researchBasis: web.length ? "web+model" : "model_knowledge",
-      model: payload.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek",
-      generatedAt: new Date().toISOString(),
+      sources: web.length ? web : fallback.sources,
+      researchBasis: web.length ? "web+rules" : "model_knowledge",
     };
-  } catch {
-    return fallback;
   }
+
+  const validated = ResearchPayloadSchema.safeParse(result.data);
+  if (!validated.success) return fallback;
+  const parsed = validated.data;
+  return {
+    ...fallback,
+    ...parsed,
+    commonProblems: parsed.commonProblems.length ? parsed.commonProblems : fallback.commonProblems,
+    sources: web.length ? web : parsed.sources.length ? parsed.sources : fallback.sources,
+    researchBasis: web.length ? "web+model" : "model_knowledge",
+    provider: result.provider,
+    model: result.model,
+    generatedAt: new Date().toISOString(),
+  };
 }

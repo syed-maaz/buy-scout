@@ -38,7 +38,7 @@ description: buy-scout — Status
 
 - **mobile.de search**: page 1 works only with a supplied Chrome profile; fresh sessions hit Akamai 403. Saved-search email import is supported. Multi-page is not stable.
 - **Laya**: on by default for CLI `fetch`, `analyze`, `daily` and `laya:classify`; loads local weights on first use; `--no-laya` or `LAYA_ENABLED=0` disables. UI Fetch now runs `fetch:report` with `--no-laya`, and the UI analysis endpoint does not call Laya.
-- **DeepSeek**: client implemented; no `DEEPSEEK_API_KEY` in this environment, so the deterministic fallback is used. Laya local classification is verified.
+- **LLM/DeepSeek**: provider-neutral OpenAI-compatible client; no key in this environment, so the deterministic fallback is used. Laya local classification is verified.
 - **Human labels**: precision@10 needs 50 labels; harness exists.
 
 ## Measured state

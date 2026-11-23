@@ -41,7 +41,7 @@ prose and questions with no API keys configured.
   `fallbackAnalysis` / `fallback` (`analyst.ts:111`–`analyst.ts:138`,
   `research.ts:325`–`research.ts:343`).
 - **`fallbackAnalysis.model` is the literal `"deterministic-fallback"`** and `source` is
-  `"fallback"`; successful calls report `source: "deepseek"` and the served model
+  `"fallback"`; successful calls report `source: "llm"`, the provider and the served model
   (`analyst.ts:56`–`analyst.ts:57`, `analyst.ts:132`–`analyst.ts:133`).
 - **Analysis selection excludes rejects first**, then applies score/confidence thresholds,
   sorts by score descending, and caps at `maxCards` clamped to 1–100

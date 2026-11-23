@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { NormalisedListing } from "../core/types.js";
 import type { CarEvaluation } from "../domain/cars/evaluate.js";
+import { callLlmJson, readLlmConfig } from "./llm.js";
 
 const AnalysisSchema = z.object({
   summary: z.string(),
@@ -11,7 +12,8 @@ const AnalysisSchema = z.object({
 });
 
 export type ListingAnalysis = z.infer<typeof AnalysisSchema> & {
-  source: "deepseek" | "fallback";
+  source: "llm" | "fallback";
+  provider: string;
   model: string;
   generatedAt: string;
 };
@@ -54,23 +56,18 @@ export function fallbackAnalysis(
     ],
     risk_notes: listing.redFlags,
     source: "fallback",
+    provider: "none",
     model: "deterministic-fallback",
     generatedAt: new Date().toISOString(),
   };
-}
-
-function baseUrl(): string | null {
-  const url = process.env.DEEPSEEK_BASE_URL;
-  return url ? url.replace(/\/$/, "") : null;
 }
 
 export async function analyzeListing(
   listing: NormalisedListing,
   evaluation: CarEvaluation,
 ): Promise<ListingAnalysis> {
-  const key = process.env.DEEPSEEK_API_KEY;
-  const base = baseUrl();
-  if (!key || !base) return fallbackAnalysis(listing, evaluation);
+  const config = readLlmConfig();
+  if (!config) return fallbackAnalysis(listing, evaluation);
 
   const prompt = `Du bist ein deutscher Gebrauchtwagen-Analyst. Analysiere nur die gelieferten Daten; erfinde keine Historie, keinen VIN und keine Unfallfreiheit.
 
@@ -89,51 +86,21 @@ Antworte ausschließlich als JSON:
   "risk_notes": ["string"]
 }`;
 
-  let response: Response;
-  try {
-    response = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL ?? "deepseek-v4.1-flash",
-        messages: [
-          { role: "system", content: "Du antwortest nur mit validem JSON. Keine Halluzinationen." },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-  } catch {
-    return fallbackAnalysis(listing, evaluation);
-  }
+  const result = await callLlmJson({
+    system: "Du antwortest nur mit validem JSON. Keine Halluzinationen.",
+    user: prompt,
+    timeoutMs: config.timeoutMs,
+  });
+  if (!result) return fallbackAnalysis(listing, evaluation);
 
-  if (!response.ok) {
-    return fallbackAnalysis(listing, evaluation);
-  }
+  const parsed = AnalysisSchema.safeParse(result.data);
+  if (!parsed.success) return fallbackAnalysis(listing, evaluation);
 
-  let payload: { choices?: Array<{ message?: { content?: string } }>; model?: string };
-  try {
-    payload = (await response.json()) as typeof payload;
-  } catch {
-    return fallbackAnalysis(listing, evaluation);
-  }
-  const content = payload.choices?.[0]?.message?.content;
-  if (!content) return fallbackAnalysis(listing, evaluation);
-
-  try {
-    const parsed = AnalysisSchema.parse(JSON.parse(content));
-    return {
-      ...parsed,
-      source: "deepseek",
-      model: payload.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek-v4.1-flash",
-      generatedAt: new Date().toISOString(),
-    };
-  } catch {
-    return fallbackAnalysis(listing, evaluation);
-  }
+  return {
+    ...parsed.data,
+    source: "llm",
+    provider: result.provider,
+    model: result.model,
+    generatedAt: new Date().toISOString(),
+  };
 }

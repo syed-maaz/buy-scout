@@ -93,22 +93,25 @@ A second entry point, `characteriseNeedWithLaya(brief)`, profiles the *need* (fr
 
 ---
 
-## 3. DeepSeek — analysis only
+## 3. LLM provider — analysis only
 
-`analyzeListing(listing, evaluation)` calls an OpenAI-compatible chat endpoint and requires **both** credentials:
+`analyzeListing(listing, evaluation)` calls an OpenAI-compatible chat endpoint. The generic configuration is:
 
 ```bash
-export DEEPSEEK_API_KEY=sk-...
-export DEEPSEEK_BASE_URL=https://api.deepseek.com
-export DEEPSEEK_MODEL=deepseek-v4.1-flash   # optional; this is the default
+export LLM_PROVIDER=deepseek        # deepseek | openai | openrouter | ollama | custom
+export LLM_BASE_URL=https://api.deepseek.com
+export LLM_MODEL=deepseek-v4.1-flash
+export LLM_API_KEY=sk-...
 ```
+
+`LLM_*` wins over the legacy `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL` names. The legacy names still work when `LLM_PROVIDER=deepseek` or when the provider is omitted. For local Ollama, no key is required. `LLM_ALLOW_NO_KEY=1` permits a custom keyless endpoint.
 
 Request shape:
 
 | Setting | Value |
 |---|---|
-| Endpoint | `POST {DEEPSEEK_BASE_URL}/chat/completions` (one trailing slash stripped) |
-| Model | `DEEPSEEK_MODEL` or `deepseek-v4.1-flash` |
+| Endpoint | `POST {LLM_BASE_URL}/chat/completions` (or the full endpoint) |
+| Model | `LLM_MODEL` or the provider default |
 | Temperature | `0.2` |
 | Response format | `{ type: "json_object" }` |
 | Timeout | `30_000` ms via `AbortSignal.timeout` |
@@ -127,10 +130,10 @@ The prompt explicitly forbids inventing history, a VIN, or accident freedom. The
 }
 ```
 
-persisted as `{ source: "deepseek", model, generatedAt, … }`.
+persisted as `{ source: "llm", provider, model, generatedAt, … }`; fallback rows use `source: "fallback"`.
 
 :::warning Key alone is not enough
-`DEEPSEEK_API_KEY` without `DEEPSEEK_BASE_URL` silently falls back to the deterministic path — `baseUrl()` returns `null` and `analyzeListing` returns `fallbackAnalysis` before any request. Both can live in `.env`. Copy `.env.example` to `.env` and fill the values. The UI and main CLIs load `.env` at startup; real shell exports take precedence. There is still no `dotenv` package, so the file is read by the application loader, not by an external tool. Never commit a real key.
+A missing key, base URL or model silently falls back to the deterministic path — `readLlmConfig()` returns `null` and `analyzeListing` returns `fallbackAnalysis` before any request. All values can live in `.env`. Copy `.env.example` to `.env` and fill the values. The UI and main CLIs load `.env` at startup; real shell exports take precedence. There is still no `dotenv` package, so the file is read by the application loader, not by an external tool. Never commit a real key.
 :::
 
 ---
@@ -141,7 +144,7 @@ Whenever DeepSeek cannot be used, `fallbackAnalysis` produces a complete, useful
 
 Fallback triggers, in order:
 
-1. No `DEEPSEEK_API_KEY` or no `DEEPSEEK_BASE_URL`.
+1. No usable provider configuration (key, base URL or model missing).
 2. Network error or non-`2xx` response.
 3. Empty/missing `choices[0].message.content`.
 4. JSON that fails `AnalysisSchema.parse`.

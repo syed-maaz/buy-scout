@@ -312,9 +312,11 @@ npm run fetch:as24
 | `AVAILABILITY_LIMIT` | `100` | `npm run availability` | Default sweep size |
 | `AVAILABILITY_DELAY_MS` | `2000` | `npm run availability` | Spacing between detail checks |
 | `UI_PORT` | `8124` | UI | Local port, bound to 127.0.0.1 |
-| `DEEPSEEK_API_KEY` | unset | Analyze | Unset means deterministic fallback |
-| `DEEPSEEK_BASE_URL` | unset | Analyze | Custom endpoint |
-| `DEEPSEEK_MODEL` | `deepseek-v4.1-flash` | Analyze | Model name |
+| `LLM_PROVIDER` | `deepseek` | Analyze | `deepseek`, `openai`, `openrouter`, `ollama` or `custom` |
+| `LLM_API_KEY` | unset | Analyze | Unset means deterministic fallback unless the provider is keyless |
+| `LLM_BASE_URL` | provider default | Analyze | OpenAI-compatible base URL or full endpoint |
+| `LLM_MODEL` | provider default | Analyze | Model name |
+| `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | unset | Analyze | Legacy aliases; used when provider is `deepseek` |
 | `LAYA_ENABLED` | `1` | Fetch and analyze | On by default; `0` or `--no-laya` disables |
 | `LAYA_SUBFOLDER` | empty | Laya | Weights subfolder; empty resolves the bundle at the repo root |
 | `LAYA_REVISION` | unset | Laya | Weights revision |

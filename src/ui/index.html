@@ -726,7 +726,7 @@ async function analyzeQualifying() {
   const minScore = Number($('cMinScore').value);
   const minConfidence = Number($('cMinConfidence').value);
   const maxCards = Number($('cMaxCards').value);
-  if (!confirm('Analyze qualifying cards? This may take several seconds and may call DeepSeek for each card.')) return;
+  if (!confirm('Analyze qualifying cards? This may take several seconds. It uses the configured LLM; without one it uses the deterministic fallback.')) return;
   $('analyzeTop').disabled = true;
   $('criteriaMsg').textContent = 'Analyzing qualifying cards…';
   try {
@@ -1081,6 +1081,7 @@ function researchHtml(research) {
   }
   const basisLabel = research.researchBasis === 'web+model'
     ? 'Web + model'
+    : research.researchBasis === 'web+rules' ? 'Web + rules — verify'
     : research.researchBasis === 'model_knowledge' ? 'Model knowledge — verify' : 'Rules only';
   const basisClass = research.researchBasis === 'web+model' ? 'basis' : 'basis warn';
   const list = (items) => items?.length ? `<ul class="detail-list">${items.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>` : '<p class="pref-note">None listed.</p>';
@@ -1144,9 +1145,14 @@ function renderDetail(data) {
   const layaLine = laya?.enabled
     ? `<div class="laya ${(laya.risk?.score ?? 0) >= 1.5 ? 'risk' : ''}"><b>Laya advisory:</b> family ${esc(laya.familyFit?.choice ?? '?')} · risk ${(laya.risk?.score ?? 0).toFixed(2)} · action ${esc(laya.action?.choice ?? '?')} · ${laya.deferToDeepSeek ? 'escalated' : 'triaged'}</div>`
     : '<p class="pref-note">No Laya classification stored. Run a fetch or <code>npm run laya:classify</code>.</p>';
+  const analysisLabel = analysis?.analysis?.source === 'fallback'
+    ? 'Analysis (deterministic fallback)'
+    : analysis?.analysis?.provider
+      ? `Analysis (${analysis.analysis.provider} · ${analysis.analysis.model ?? 'model'})`
+      : 'Analysis';
   const analysisBlock = analysis?.analysis
-    ? `<div class="analysis"><b>DeepSeek analysis:</b> ${esc(analysis.analysis.summary)}${analysis.analysis.questions?.length ? `<br><b>Ask:</b> ${esc(analysis.analysis.questions.slice(0, 5).join(' | '))}` : ''}</div>`
-    : '<p class="pref-note">No DeepSeek analysis stored for this car.</p>';
+    ? `<div class="analysis"><b>${esc(analysisLabel)}:</b> ${esc(analysis.analysis.summary)}${analysis.analysis.questions?.length ? `<br><b>Ask:</b> ${esc(analysis.analysis.questions.slice(0, 5).join(' | '))}` : ''}</div>`
+    : '<p class="pref-note">No analysis stored for this car.</p>';
   const reasons = evaluation.hardFailures.length ? evaluation.hardFailures : evaluation.unknowns.length ? evaluation.unknowns.map((field) => `unknown: ${field}`) : evaluation.reasons;
   const outcomeLabels = {
     bought: 'Bought',
