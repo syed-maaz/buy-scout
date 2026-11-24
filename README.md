@@ -1,160 +1,348 @@
-# buy-scout Blueprint
+# buy-scout
 
-## System Overview
+**A local-first buying engine for turning a search brief into a ranked, explained shortlist.**
 
-A buy-side search, normalisation, shortlist and decision engine. Car-first POC for
-Wiesloch 69168, the configured all-in budget and a family of four.
+buy-scout is currently a working prototype for the **German used-car market**: it searches
+several marketplaces, normalises the listings into one model, applies deterministic family
+and budget rules, ranks the result, and adds an optional LLM/AI analysis layer. It runs on
+your own machine. Listings, decisions and credentials stay local.
 
-The product thesis is a generic core with a car domain pack: search brief → source
-adapters → normalised item → family/domain filters → score → shortlist → contact →
-outcome → memory. N sources run in parallel; a blocked source is reported, never fatal.
-Parsers own extraction, DeepSeek analyses rather than extracts, Laya is advisory and
-rules own every veto.
+> **Status:** early public prototype. The car domain works; the generic engine and MCP
+> server are the next major milestones. See [Roadmap](#roadmap) and [docs/MCP.md](./docs/MCP.md).
+>
+> **License:** MIT. **Language:** English | [Deutsch](./README.de.md)
 
-### Principles
+---
 
-- **N sources run in parallel.** No first/second/third priority. `runSources()` uses
-  `Promise.allSettled`; one blocked source never holds back the rest.
-- **FETCH → PROCESS → ANALYZE → PROPOSE.** Raw snapshots are immutable; normalized
-  listings are derived; decisions reference both.
-- **Deterministic extraction.** Parsers own fields. DeepSeek does **not** extract; it
-  analyses normalised listings.
-- **Laya is advisory triage; DeepSeek is analysis-only.** Laya is on by default for CLI
-  `fetch`, `analyze`, `daily` and `laya:classify`, and classifies family fit/risk/action/
-  deal; it loads local weights on first use. It never changes a rule verdict and never
-  suppresses the explanation. `--no-laya` disables it per run, `LAYA_ENABLED=0` globally.
-  The UI's **Fetch now** runs `fetch:report` with `--no-laya`, and the UI analysis endpoint
-  does not call Laya.
-- **Rules own all vetoes.** Budget, distance, seats, doors, ISOFIX presence, year,
-  mileage, damage, seller type and red flags are deterministic. HU/VIN are pre-purchase
-  checks, not implemented gates.
-- **Filter integrity is a first-class check.** A 200 response with 774k cars is a failed
-  run, not a success.
-- **Memory is local.** Observations, decisions, outcomes, priors and rule cards live in
-  the same SQLite database; recall is not wired yet.
-- **The public snapshot excludes local state.** `.claude/`, `MEMORY.md`, `reviews/`,
-  `data/` and `.env` are deliberately ignored. The published tree is source, tests,
-  public documentation and configuration examples only.
+## Goal
 
-### Status
+The long-term goal is a **generic search and buying engine for anything**, not only cars.
 
-| Source | Status |
-|---|---|
-| AutoScout24 | working: search + detail enrichment + family gates |
-| Kleinanzeigen | working: direct search + detail HTML |
-| AutoUncle | working: Jina Reader with local Chrome fallback; paginated |
-| mobile.de | page-1 search works only with a supplied Chrome profile; saved-search email import supported; source disabled by default |
-| Kleinanzeigen | working: direct search + detail HTML; URL import for listings outside the paged index |
+You describe what you want in a structured brief:
 
-Current state is generated, not copied: run `npm run health`, `npm run eval`, and
-`npm test`. The active criteria are v18 (€7,000 car cap + €800 reserve, 200 km).
-
-Laya runs locally. The LLM is optional and OpenAI-compatible. Set one endpoint with
-`LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY`; there is no provider switch. Without a
-usable endpoint the analysis path returns the deterministic fallback. `LLM_LANGUAGE=en`
-keeps generated analysis and research in English; the default is English. `.env` is loaded at
-startup for the UI and the main CLIs; shell exports take precedence.
-
-> The `sources` table is the switch. Only enabled adapters are constructed. Direct
-> Kleinanzeigen access is experimental: its terms require written consent for crawlers,
-> so the saved-search email is the compliant route.
-
-### Quickstart
-
-```bash
-npm install
-cp .env.example .env      # optional local config; never commit .env
-npm run typecheck
-npm test
-npm run fetch:as24 -- --pages 1 --delay 500
-npm run fetch:as24 -- --source mobile_de --pages 1   # requires BUY_SCOUT_CHROME_PROFILE
-npm run import:url -- --url "https://www.kleinanzeigen.de/s-anzeige/..."
-npm run import:leads -- --dir ./data/emails
-npm run score -- --top 20
-npm run analyze          # all qualifying cards (score + confidence)
-npm run labels:export    # 50-car label CSV
-npm run labels:score     # precision@10 once labelled
-npm run analyze -- --top 10   # optional manual override
-npm run eval
-npm run health
-npm run playbook -- --symptom cloudflare
-npm run report
-npm run reparse -- --limit 5   # rebuild from stored AutoScout24 pages
-npm run intake -- --title "VW Passat" --url https://... --price 6500 --mileage 150000 --year 2013 --seats 5 --doors 5 --isofix yes --body Kombi --zip 69168
-npm run ui          # http://127.0.0.1:8124
+```text
+category        car, bicycle, laptop, apartment, camera, ...
+budget          purchase price + reserve
+location        postcode + radius
+hard criteria   must-haves and exclusions
+preferences     what should rank higher
+evidence        which fields must be known before a decision
 ```
 
-`--no-details` skips detail enrichment (faster, but family fields become unknown and
-verdicts become `ask`).
+The engine then:
 
-Data lands in:
+1. fetches matching listings from multiple sources,
+2. normalises them into one comparable shape,
+3. applies deterministic filters and hard vetoes,
+4. scores and ranks the remaining candidates,
+5. asks for missing evidence instead of guessing,
+6. adds an LLM-written analysis and research brief,
+7. records the decision and the final outcome,
+8. learns from the outcome for the next search.
+
+The car pack is the first complete domain because buying a family car is a real,
+high-stakes decision with messy marketplace data. The core is deliberately separated from
+the car rules so other categories can be added later.
+
+**Automation is the destination:** a scheduled run should fetch, evaluate, explain and
+surface the best options without a human rebuilding the search every day. The current
+build already has the batch pieces; scheduling and the MCP interface are the next steps.
+
+---
+
+## What works today
+
+| Area | State |
+|---|---|
+| AutoScout24 | search, detail enrichment, family fields |
+| Kleinanzeigen | search, detail HTML, URL import |
+| AutoUncle | Jina Reader with local Chrome fallback, pagination |
+| mobile.de | profile-backed page-1 search; saved-search email import; disabled by default |
+| Normalisation | one listing model across sources, dedupe, price history |
+| Rules | budget, distance, seats, doors, ISOFIX, year, mileage, damage, seller type, red flags |
+| Verdicts | `inspect`, `ask`, `watch`, `reject` |
+| UI | loopback web UI, criteria editor, filters, analysis, research, decisions, outcomes |
+| CLI | fetch, score, analyse, research, health, report, eval, import, labels |
+| Local AI | Laya for advisory triage |
+| Remote AI | optional OpenAI-compatible LLM (`LLM_*`) for analysis and research |
+| Storage | SQLite (WAL), raw snapshots, price history, decisions, outcomes |
+| MCP | **design only**, not implemented |
+
+---
+
+## How it works
+
+```text
+Search brief
+    │
+    ▼
+Source adapters (parallel, isolated failures)
+    │  AutoScout24 · Kleinanzeigen · AutoUncle · mobile.de
+    ▼
+Raw snapshots + normalised listings + dedupe
+    │
+    ▼
+Deterministic evaluation
+    │  hard gates → unknown fields → score → verdict
+    ├── reject   hard veto, score 0
+    ├── ask      a blocking field is unknown
+    ├── watch    passes gates, but score < 65
+    └── inspect  passes gates, complete, score >= 65
+    │
+    ▼
+Shortlist + optional Laya triage + optional LLM analysis / research
+    │
+    ▼
+Human decision → saved / contact / inspect / skip / gone
+    │
+    ▼
+Outcome + local learning
+```
+
+### Non-negotiable design rules
+
+- **Parsers extract; models explain.** The LLM never invents listing fields.
+- **Rules own every veto.** An LLM cannot change a hard gate or the rule verdict.
+- **Unknown is not a “no”.** A missing blocking field produces `ask`, never a silent reject.
+- **A source failure never kills the run.** Sources run in parallel and fail independently.
+- **Raw data is immutable.** Normalised listings are derived and can be rebuilt.
+- **Everything local by default.** SQLite, snapshots and credentials stay on the machine.
+- **No hidden scraping tricks.** Access methods and source limitations are documented.
+
+The full architecture is in [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md). The exact
+verdict logic is in [docs/VERDICTS.md](./docs/VERDICTS.md).
+
+---
+
+## Local API
+
+The UI is a loopback HTTP server at `http://127.0.0.1:8124`. It exposes a small JSON API
+used by the browser; it is **not** an authenticated public API.
+
+```bash
+npm run ui
+# http://127.0.0.1:8124
+```
+
+Core read endpoints:
+
+```text
+GET  /api/listings
+GET  /api/listing?source=...&externalId=...
+GET  /api/summary
+GET  /api/criteria
+```
+
+Core actions:
+
+```text
+POST /api/fetch                 start a fetch job
+GET  /api/fetch/status          poll the fetch job
+POST /api/analyze               start an LLM analysis job
+GET  /api/analyze/status        poll the analysis job
+POST /api/research              deep research for one listing
+POST /api/message               draft a seller message
+POST /api/action                inspect | watch | skip
+POST /api/save                  toggle saved
+POST /api/outcome               record bought / rejected / inspection failed / ...
+POST /api/listing/gone          mark gone or sold
+POST /api/listing/restore       restore an unavailable listing
+POST /api/availability          check the source detail page
+POST /api/import-url            import one listing URL
+POST /api/criteria              save a new criteria version
+POST /api/preferences/learn     derive preference rules from saved decisions
+```
+
+Every endpoint, request body, response shape and status code is documented in
+**[docs/API.md](./docs/API.md)**.
+
+Security note: the server binds to `127.0.0.1` and rejects cross-origin mutations. Do not
+expose it directly to the internet.
+
+---
+
+## AI layer
+
+buy-scout separates three things:
+
+1. **Rules** decide the verdict and score.
+2. **Laya** is a small local model used for advisory triage.
+3. **The LLM** writes analysis and research prose, and never changes the verdict.
+
+The remote LLM is OpenAI-compatible and optional:
+
+```dotenv
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-v4.1-flash
+LLM_API_KEY=...
+LLM_LANGUAGE=en
+```
+
+A missing or failing LLM configuration falls back to a deterministic local brief. Laya
+works without an API key. See [docs/ANALYSIS.md](./docs/ANALYSIS.md) for the exact request
+shape, timeout and fallback rules.
+
+---
+
+## MCP
+
+MCP is the planned integration layer for agents and editors. It is **not implemented yet**;
+the design is in **[docs/MCP.md](./docs/MCP.md)**.
+
+The planned server will expose the engine as tools rather than exposing SQLite directly:
+
+```text
+search_brief          create / update a structured buying brief
+run_fetch             fetch matching listings from enabled sources
+list_candidates       ranked shortlist with rule evidence
+evaluate_listing      deterministic evaluation for one listing
+analyze_listing       optional LLM analysis for one listing
+research_listing      optional deep research for one listing
+record_action         inspect / watch / skip / save
+record_outcome        bought / sold / rejected / inspection failed
+compare_candidates    side-by-side comparison
+```
+
+The MCP server will be local-first (stdio), reuse the same core services as the CLI/UI,
+and keep credentials outside the model context.
+
+---
+
+## Roadmap
+
+### Now — car POC, local-first
+
+- stabilise German source adapters and availability checks
+- improve listing extraction and family-field completeness
+- make the UI and reports fully bilingual (English/German)
+- harden tests and evaluation fixtures
+
+### Next — generic engine + MCP
+
+- extract the category contract from the car pack
+- add a second category pack to prove the abstraction
+- add the MCP server and tool schemas
+- add scheduled runs and notifications
+- add pluggable scoring profiles and evidence requirements
+- add importers for saved searches, email alerts and CSV/JSON
+
+### Later — production-grade buying engine
+
+- multi-user and hosted mode
+- source plugin SDK
+- price/availability history and market trends
+- human feedback loop and learned ranking
+- mobile-friendly UI
+- public API with authentication and rate limits
+
+The roadmap is intentionally explicit: the current repository is an early prototype, not a
+finished product. See [docs/ROADMAP.md](./docs/ROADMAP.md) for the detailed work list.
+
+---
+
+## Quick start
+
+Requirements: Node.js 24+, npm, macOS/Linux. A local Chrome profile is only needed for
+mobile.de.
+
+```bash
+git clone https://github.com/syed-maaz/buy-scout.git
+cd buy-scout
+npm install
+cp .env.example .env       # edit locally; never commit .env
+npm run typecheck
+npm test
+npm run ui                 # http://127.0.0.1:8124
+```
+
+Useful commands:
+
+```bash
+npm run fetch:as24 -- --pages 1 --delay 500
+npm run score -- --top 20
+npm run analyze
+npm run analyze -- --top 10
+npm run eval
+npm run health
+npm run report
+npm run import:url -- --url "https://www.kleinanzeigen.de/s-anzeige/..."
+npm run import:leads -- --dir ./data/emails
+```
+
+The default example brief is a German family-car search: **€7,000 car budget, €800
+reserve, 200 km radius**. It is a starting point, not a hard-coded product limit.
+
+Data is written to:
 
 ```text
 data/
   buy-scout.db
-  raw/autoscout24/YYYY-MM-DD/*.html
-  raw/autoscout24/YYYY-MM-DD/listings/*.json
+  raw/<source>/<date>/*.html|*.json
 ```
 
-Useful flags:
+`data/` and `.env` are ignored by Git.
+
+---
+
+## Contributing
+
+This is currently a **solo-maintained project**. I am building it in public and I welcome
+contributions, bug reports and corrections. There is no team and no guaranteed response
+time, but useful issues and focused pull requests are very welcome.
+
+Good ways to help:
+
+- report a source that no longer parses, with a redacted HTML sample
+- add fixtures for a new listing layout
+- improve German/English wording
+- add a category pack (bicycle, laptop, apartment, …)
+- review the MCP design
+- improve tests, docs or accessibility
+
+Before opening a PR:
 
 ```bash
-npm run fetch:as24 -- --max 7000 --zip 69168 --radius 200
+npm run typecheck
+npm test
 ```
 
-## Subdirectories & System Boundaries
+Please do not commit `.env`, database files, raw listing dumps, API keys, personal data or
+scraped content that you do not have permission to redistribute. For source-access issues,
+open an issue rather than adding a bypass.
 
-- [src](./src/README.md) — engine source tree: CLI/UI entrypoints over core, domain,
-  sources, intelligence, report and db; db is the only SQL boundary.
-- [website](./website/README.md) — Docusaurus documentation site and landing page;
-  presentation only, no domain logic.
-- [scripts](./scripts/README.md) — manual, out-of-pipeline probes and an offline
-  AutoUncle parser; never invoked by the daily run.
+There is no CLA. By contributing, you agree that your contribution is licensed under the
+repository's MIT license.
 
-`tests/`, `docs/` and `data/` are not source-contract directories:
-`tests/` is consumed by `npm test`, `docs/` is the canonical prose set, and `data/` is
-generated runtime state. The `design-system/` tree is a design artifact, not application
-source. Internal review notes, agent state and the private memory file are excluded from
-the public snapshot.
+---
 
-## Global Invariants
+## Privacy and safety
 
-- **Rules decide, models annotate.** `evaluateCar` owns the verdict; DeepSeek and Laya
-  may add prose and questions, never a different verdict or score.
-- **`null` means unknown, never zero.** Unknown never hides or rejects a car; it produces
-  verdict `ask` instead.
-- **One distance tolerance** (`max(5, ceil(radius * 0.05))` km) is shared by source
-  filtering, integrity checks and evaluation.
-- **Listing identity is `(source, external_id)`**, and only `src/db` enforces it.
-- **A source failure must never stop the pipeline.** Only a source-confirmed 404/410 or
-  explicit gone page retires a listing; unknown never hides a car.
-- **Criteria changes invalidate derived analyses**, enforced transactionally in
-  `saveCriteria`.
-- **Fetch and analysis are separate.** Saving criteria re-scores on read and clears cached
-  analyses; it never fetches. A fetch never changes the active criteria version.
+- All runtime data is local by default.
+- No analytics, tracking or telemetry is built in.
+- `.env`, `data/`, local memory and internal review notes are excluded from the public tree.
+- The LLM sees only the normalised listing and rule result, not your API keys.
+- A listing is hidden only when the source confirms it is gone, or when you mark it gone.
+- This tool does not replace an inspection, HU/AU report, VIN check or legal advice.
 
-## Global Side Effects
-
-- A single SQLite database (default `./data/buy-scout.db`) with WAL journaling and
-  foreign keys enabled.
-- The `./data/raw/**` tree of byte-exact search and detail captures, plus JSON/HTML/CSV
-  artifacts written by the CLI.
-- Outbound HTTPS to AutoScout24, Kleinanzeigen, AutoUncle (Jina Reader or local Chrome),
-  mobile.de (only with a supplied browser profile), the DeepSeek chat-completions API
-  when configured, and the Firecrawl search API when configured.
-- A loopback HTTP listener on `127.0.0.1:8124` (override with `UI_PORT`) that can spawn
-  the fetch pipeline as a child process.
-- The Docusaurus build writes `website/build/` and `website/.docusaurus/`; `docs:sync`
-  deletes and recreates `website/docs`.
-
-## System Verification
-
-- Run: `npm test` (the repository test suite; currently `tsx --test tests/*.test.ts`).
-- Run: `npm run typecheck` for the TypeScript build.
-- Run: `npm run docs:build` for the documentation site.
-- Run: `npm run health` for current source/database state; it prints the active criteria
-  version and exits non-zero when the database is not healthy.
+---
 
 ## License
 
 MIT © 2026 Syed Muhammad Maaz Bin Muzaffar. See [LICENSE](./LICENSE).
+
+---
+
+## Deutsch
+
+Die vollständige deutsche Beschreibung steht in **[README.de.md](./README.de.md)**.
+
+Kurzfassung: **buy-scout** ist eine lokale Such- und Kaufentscheidungs-Engine. Aktuell ist
+sie auf den **deutschen Gebrauchtwagenmarkt** spezialisiert: Sie durchsucht mehrere
+Plattformen, normalisiert die Inserate, prüft harte Kriterien, sortiert die Kandidaten,
+markiert fehlende Angaben als Rückfrage und ergänzt eine optionale KI-Analyse. Das Ziel ist
+eine **generische Engine für beliebige Produkte und Kategorien**: Kriterien eingeben,
+Quellen automatisch durchsuchen, Kandidaten bewerten und Entscheidungen dokumentieren.
+
+Die Regeln behalten immer das letzte Wort. Die KI erklärt nur. Alles läuft lokal; Daten und
+Zugangsdaten bleiben auf dem eigenen Rechner. Das Projekt ist **Open Source unter MIT** und
+wird derzeit allein entwickelt. Beiträge, Fehlerberichte und Korrekturen sind willkommen.
