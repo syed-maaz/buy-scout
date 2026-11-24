@@ -174,7 +174,7 @@ The remote LLM is OpenAI-compatible and optional:
 ```dotenv
 LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-v4.1-flash
-LLM_API_KEY=...
+LLM_API_KEY=<your-key>
 LLM_LANGUAGE=en
 ```
 

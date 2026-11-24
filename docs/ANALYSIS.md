@@ -100,7 +100,7 @@ A second entry point, `characteriseNeedWithLaya(brief)`, profiles the *need* (fr
 ```bash
 export LLM_BASE_URL=https://api.deepseek.com
 export LLM_MODEL=deepseek-v4.1-flash
-export LLM_API_KEY=sk-...
+export LLM_API_KEY=<your-key>
 ```
 
 There is exactly one endpoint configuration. Change the base URL and model for another provider. For a keyless local endpoint, set `LLM_ALLOW_NO_KEY=1`; for example Ollama at `http://127.0.0.1:11434/v1` with `llama3.1`.
@@ -319,7 +319,7 @@ npm run analyze -- --no-laya
 npm run analyze -- --db ./data/buy-scout.db --out ./data/analysis.json
 
 # DeepSeek instead of the fallback
-export LLM_API_KEY=sk-...
+export LLM_API_KEY=<your-key>
 export LLM_BASE_URL=https://api.deepseek.com
 npm run analyze
 
